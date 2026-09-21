@@ -2,8 +2,9 @@
 
 ## Par où commencer
 
-Trois fichiers, trois objectifs distincts. Les lire dans cet ordre avant de
-toucher à quoi que ce soit :
+[README.md](README.md) présente le dépôt en deux minutes. Pour y travailler, il
+faut les trois fichiers ci-dessous, à lire dans cet ordre avant de toucher à
+quoi que ce soit :
 
 | fichier | ce qu'il contient | à quelle question il répond |
 |---|---|---|
@@ -27,43 +28,84 @@ ajouter sans avoir vérifié, et ne pas en retirer sans avoir mesuré le contrai
 
 ## Cycle de vie des fichiers
 
-**La roadmap ne s'accumule jamais.** Un fichier qui ne fait que grossir est un
-journal, pas une feuille de route, et il redevient illisible comme l'était le
-`chantier.md` d'origine. Ce qui est fait en sort.
+Cette section est la pratique de développement du dépôt. Elle est écrite pour
+être reprise telle quelle dans les dépôts voisins.
 
-La circulation est la suivante, et elle est la même à chaque version :
+### À quoi sert chaque fichier
+
+Une phrase chacun, et c'est ce qui décide où une information doit aller :
+
+| fichier | ce qu'il est |
+|---|---|
+| `SOURCE.md` | ce qui est vrai indépendamment de nous, mesuré sur le service |
+| `DESIGN.md` | ce que nous avons décidé, et pourquoi |
+| `ROADMAP.md` | ce que nous n'avons pas encore fait |
+| `CHANGELOG.md` | ce que nous avons livré, version par version |
+| `README.md` | ce dont un utilisateur a besoin pour s'en servir |
+| `CLAUDE.md` | comment on travaille ici, et ce qu'il ne faut pas casser |
+
+Si une information ne rentre dans aucun des six, c'est probablement qu'elle
+appartient à un commentaire dans le code ou à un message de commit.
+
+### La roadmap ne s'accumule jamais
+
+Un fichier qui ne fait que grossir est un journal, pas une feuille de route, et
+il redevient illisible. **Ce qui est fait en sort.** La roadmap doit rétrécir à
+chaque version, pas grandir.
 
 ```
 en cours de route
-  une mesure           ------->  SOURCE.md      et nulle part ailleurs
-  une decision prise    ------->  DESIGN.md      cite la mesure, ne la recopie pas
-  un revirement         ------->  ROADMAP.md     journal, tant qu'il est frais
+  une mesure              ->  SOURCE.md       et nulle part ailleurs
+  une decision prise      ->  DESIGN.md       cite la mesure, ne la recopie pas
+  un revirement           ->  ROADMAP.md      journal, tant qu'il est frais
 
 a la livraison d'une version
-  les phases faites     ------->  CHANGELOG.md   sous ## [x.y.z] - date
-  le raisonnement stable ------>  DESIGN.md      puis l'entree de journal disparait
-  ce qui reste          ------->  ROADMAP.md     qui ne garde que l'avenir
+  les phases faites       ->  CHANGELOG.md    sous ## [x.y.z] - date
+  le raisonnement stable  ->  DESIGN.md       puis l'entree de journal disparait
+  ce qui reste            ->  ROADMAP.md      qui ne garde que l'avenir
 ```
 
-Concrètement, au moment de livrer :
+Le journal de `ROADMAP.md` est une **zone d'attente, pas une archive**. Une
+entrée qui explique pourquoi on a changé d'avis a sa place tant que c'est frais ;
+dès que la décision est stable, son raisonnement appartient à `DESIGN.md` ou au
+README, et l'entrée se supprime. Les messages de commit gardent la trace fine,
+c'est leur rôle, et ils sont écrits pour ça.
 
-1. `CHANGELOG.md` reçoit une section `## [1.0.0] - 2026-xx-xx` qui dit ce que la
-   version contient, en prose. Format [Keep a Changelog](https://keepachangelog.com/fr/).
-2. Les phases livrées **disparaissent** de `ROADMAP.md`, qui rouvre une section
-   pour la suite. Il doit rétrécir à chaque version, pas grandir.
-3. Le journal est une **zone d'attente, pas une archive** : une entrée qui
-   explique pourquoi on a changé d'avis a sa place tant que c'est frais, mais
-   dès que la décision est stable son raisonnement appartient à `DESIGN.md` ou
-   au README, et l'entrée se supprime. Les messages de commit gardent la trace
-   fine, c'est leur rôle.
-4. `git tag v1.0.0`, et la version bouge au même moment dans `SCRIPT_VERSION`,
-   `pyproject.toml` et `CITATION.cff`.
+### Les versions, et pourquoi on ne se contente pas de dater
 
-Ce qui distingue les quatre fichiers tient en une phrase : `SOURCE.md` est vrai
-indépendamment de nous, `DESIGN.md` est ce que nous avons décidé, `ROADMAP.md`
-est ce que nous n'avons pas encore fait, `CHANGELOG.md` est ce que nous avons
-livré. Si une information ne rentre dans aucun des quatre, c'est probablement
-qu'elle appartient au README ou à un commentaire dans le code.
+Trois gestes au moment de livrer, pas un de plus :
+
+1. La version bouge dans `SCRIPT_VERSION`, qui est la source unique de vérité,
+   et de là dans `pyproject.toml` et `CITATION.cff`.
+2. `CHANGELOG.md` reçoit une section `## [x.y.z] - aaaa-mm-jj`, en prose, qui
+   dit ce que la version apporte. Format
+   [Keep a Changelog](https://keepachangelog.com/fr/).
+3. `git tag vx.y.z && git push --tags`.
+
+**Dater les fichiers à la place serait plus simple mais ne marcherait pas.** Git
+date déjà tout, et le vrai besoin est ailleurs : ces dépôts produisent des jeux
+de données citables, avec un `CITATION.cff` et un `datapackage.json` qui portent
+un numéro de version. « J'ai utilisé la v1.1.0 » doit désigner quelque chose de
+reproductible, ce qu'une date de fichier ne fait pas. Le numéro de version
+n'est donc pas de la cérémonie, c'est ce qui rend le jeu de données rattachable
+à l'outil qui l'a produit.
+
+La numérotation reste simple et ne mérite aucune discussion : le troisième
+chiffre pour une correction, le deuxième pour un ajout qui ne casse rien, le
+premier quand le format des données livrées change.
+
+### Ce que Claude fait sans qu'on le lui demande
+
+La rotation est à l'initiative de l'assistant, pas de l'utilisateur. Sans
+attendre qu'on le demande :
+
+- proposer la rotation quand une phase de la roadmap est finie, plutôt que de
+  laisser la roadmap enfler ;
+- signaler quand une entrée de journal a fait son temps et que son raisonnement
+  devrait passer dans `DESIGN.md` ;
+- proposer une version quand ce qui a été livré en mérite une ;
+- refuser d'ajouter une information dans le fichier le plus proche si sa place
+  est ailleurs, et dire où elle va.
 
 ## État
 

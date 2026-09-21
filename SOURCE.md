@@ -322,18 +322,41 @@ optionnelle. Le JSON servi est mis en forme avec indentation, ce qui explique
 Mesures du 21 septembre 2026 sur le jeu de test. Elles corrigent plusieurs
 généralisations tirées du seul cas de Tarascon.
 
-### La carte de couverture, pour une requête
+### La carte de couverture, ou comment savoir avant de télécharger
 
-`QIXnJ` (débit instantané maximal journalier), en famille `daily_variable` et en
-statut `most_valid`, rend **un point par jour sur toute la vie de la station**,
-avec le statut de ce jour et, dans `md`, l'instant du maximum. Comme c'est un
-extrême *de l'instantané*, il n'existe que là où la chronique instantanée
-existe. Une requête, moins de 2 secondes, et on sait quoi télécharger avant de
-télécharger.
+**Le problème.** Pour savoir si une station porte des données utilisables, sur
+quelle période et à quelle finesse, il faudrait les avoir téléchargées. Mais une
+station représente jusqu'à plusieurs millions de points et une heure de
+requêtes. On ne peut donc pas choisir quoi télécharger sans avoir déjà tout
+téléchargé, ce qui est absurde et coûteux pour un service public gratuit.
+
+**L'idée.** HydroPortail publie, à côté de la chronique instantanée, des
+**résumés journaliers calculés à partir d'elle**. L'un d'eux, `QIXnJ`, est le
+débit instantané maximal de chaque journée : une valeur par jour au lieu de 288.
+
+Comme cette valeur est *dérivée* de la chronique instantanée, elle n'existe
+**que les jours où celle-ci existe**. La demander revient donc à lire la table
+des matières de la donnée au lieu de lire la donnée : on apprend le premier
+jour, le dernier, quels jours manquent, et dans quel état de validation chacun
+se trouve, sans jamais toucher aux points eux-mêmes.
+
+**Le gain.** Toute la vie d'une station tient dans une requête de moins de deux
+secondes et quelques milliers de points, là où la chronique correspondante en
+compte des millions. À Tarascon, 11 217 points au lieu de plus de 3 millions.
+
+**En pratique**, c'est la famille `daily_variable`, la grandeur `QIXnJ`, le
+statut `most_valid` et une fenêtre couvrant toute la vie de la station. Le champ
+`md` donne en prime l'instant où le maximum s'est produit.
 
 Vérifié que sa présence implique bien celle de la chronique sous-jacente, y
 compris aux dates les plus anciennes : W011001001 en janvier 1981 rend 299
-points de Q, Y532501001 en décembre 1970 en rend 81.
+points de Q, Y532501001 en décembre 1970 en rend 81. La table des matières ne
+ment pas sur le contenu.
+
+Une réserve à connaître : **la carte dit quels jours existent, pas à quelle
+finesse**. Un jour présent peut porter 288 points ou 8. La densité réelle ne se
+mesure qu'après téléchargement, et c'est pourquoi `couverture.csv` se remplit en
+deux temps.
 
 ```
 code           jours      debut        fin   couv   statuts (jours)

@@ -231,22 +231,38 @@ Le plan initial mettait un `intervalle_median_min` unique par station dans
 cours de la vie d'une station, et pas monotonement : un chiffre unique dit donc
 le contraire de la vérité sur les deux bouts de la chronique.
 
-C'est donc une table à part, **une ligne par station, année et statut**,
-calculée depuis la table de faits après téléchargement :
+C'est donc une table à part, **une ligne par station, année et statut**, et
+elle se remplit en deux temps.
 
-| colonne | ce qu'elle dit |
-|---|---|
-| `code_station` | |
-| `annee` | |
-| `statut` | le code `s`, parce que brut et validé n'ont pas la même densité |
-| `nb_points` | le volume |
-| `jours_avec_donnees` | les trous, qu'un pas médian ne montre jamais |
-| `intervalle_median_min` | la résolution courante |
-| `intervalle_p90_min` | la résolution dans le pire décile, donc l'irrégularité |
+| colonne | ce qu'elle dit | remplie |
+|---|---|---|
+| `code_station` | | inventaire |
+| `annee` | | inventaire |
+| `statut` | le code `s`, parce que brut et validé n'ont pas la même densité | inventaire |
+| `jours_avec_donnees` | les trous, qu'un pas médian ne montre jamais | inventaire |
+| `nb_points` | le volume réel | après téléchargement |
+| `intervalle_median_min` | la résolution courante | après téléchargement |
+| `intervalle_p90_min` | la résolution dans le pire décile, donc l'irrégularité | après téléchargement |
 
 Sept colonnes, et chacune répond à une question qu'un analyste se pose avant de
 lancer un calcul. Elle reste petite : environ 7 000 lignes pour 68 stations sur
 toute leur vie.
+
+**Les quatre premières colonnes s'obtiennent sans rien télécharger de lourd**,
+par la carte `QIXnJ` décrite dans [SOURCE.md](SOURCE.md), à raison d'une requête
+de deux secondes par station. Les trois dernières demandent la donnée elle-même
+et restent vides tant qu'elle n'a pas été téléchargée.
+
+**Un seul fichier, rempli progressivement**, plutôt que deux fichiers qui se
+ressembleraient. Une colonne vide veut dire une seule chose, « pas encore
+mesuré », et jamais « mesuré à zéro » : `jours_avec_donnees` à 0 signifie qu'il
+n'y a rien cette année là, alors qu'un `nb_points` vide signifie qu'on n'a pas
+regardé. Un run partiel donne donc un fichier partiellement complété, ce qui est
+exactement l'information vraie.
+
+C'est ce qui permet de rendre un tableau de ce qui existe sur une liste de
+stations **avant** d'engager le téléchargement, pour que le demandeur dise ce
+qu'il veut vraiment plutôt que de recevoir un gigaoctet à trier.
 
 **Pourquoi ces trois indicateurs et pas un seul.** Sur l'Isère à Moûtiers, la
 médiane seule raconte une histoire fausse à deux endroits : en 2015 elle
@@ -262,12 +278,14 @@ répond pas à sa place : elle lui donne de quoi trancher.
 
 ### `--inventaire`, avant de télécharger
 
-La carte `QIXnJ` donne les bornes, les jours et le mélange de statuts pour une
-requête par station, sans rien télécharger de lourd. Comme chez les voisins,
-`--inventaire` l'affiche et s'arrête, ce qui permet de voir ce qu'une liste de
-codes contient réellement avant d'engager une campagne : combien de codes ne
-portent aucun débit, lesquels sont des codes de site, quelle profondeur chacun
-offre.
+Comme chez les voisins, `--inventaire` interroge la carte de couverture et
+s'arrête, sans toucher aux chroniques. Il affiche un résumé et **écrit
+`stations.csv` et les colonnes d'inventaire de `couverture.csv`**, de sorte que
+son résultat se transmette et se discute au lieu de défiler à l'écran.
+
+C'est ce qui permet de voir ce qu'une liste de codes contient réellement avant
+d'engager une campagne : combien ne portent aucun débit instantané, lesquels
+sont des codes de site, quelle profondeur et quels trous chacun offre.
 
 ### `ref_codes.csv`
 

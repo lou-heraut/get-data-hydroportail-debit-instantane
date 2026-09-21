@@ -1,0 +1,14 @@
+# Environnement virtuel
+.python_env/
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# Données téléchargées : elles se régénèrent avec download_hydroportail.py
+donnees_hydroportail/
