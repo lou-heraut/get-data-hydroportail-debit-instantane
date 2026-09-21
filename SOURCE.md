@@ -549,10 +549,15 @@ memoire au pic   1,58 Go              une station a la fois, ne croit pas avec l
 ```
 
 Soit **environ trois heures et demie pour 68 stations**, ce qui confirme l'ordre
-de grandeur annoncé. La mémoire est le seul point de vigilance : elle est
-dominée par la plus grosse station, Tarascon et ses 2,8 millions de lignes, et
-une station beaucoup plus dense demanderait de traiter les fenêtres au fil de
-l'eau plutôt que de les accumuler.
+de grandeur annoncé.
+
+La mémoire n'est pas une contrainte. Le pic vient de la plus grosse station et
+non de leur nombre, puisqu'elles sont traitées une par une, et vaut environ 560
+octets par ligne pendant la fusion. Saturer une machine de 16 Go demanderait
+donc **une seule station d'environ 28 millions de points**, soit 350
+station-années au pas de 5 minutes qui est la norme. Le cas n'existe pas en
+pratique. Si un jour il se présentait, le remède connu est d'écrire les fenêtres
+au fil de l'eau au lieu de les accumuler.
 
 ## Site et station
 

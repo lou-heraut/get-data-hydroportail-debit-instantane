@@ -183,9 +183,9 @@ maximum journalier, donc un jour portant du brut et du validé n'est compté que
 sous l'un des deux. Le compte exact, tiré de la chronique, remplace désormais
 l'estimation dès que celle-ci est téléchargée.
 
-Point de vigilance mesuré : 1,58 Go de mémoire au pic, dominés par la plus
-grosse station. Cela ne croît pas avec le nombre de stations, mais une station
-beaucoup plus dense demanderait de traiter les fenêtres au fil de l'eau.
+Mémoire mesurée : 1,58 Go au pic, dominés par la plus grosse station et non par
+leur nombre. Ce n'est pas une contrainte, il faudrait une station de 28 millions
+de points pour saturer une machine de 16 Go.
 
 ### 21 septembre 2026, phases 1 à 3
 
