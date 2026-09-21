@@ -65,8 +65,33 @@ python download_hydroportail.py --fichier stations_rmc.txt --statuts most_valid
 ```
 
 Comptez environ **trois minutes et 6 Mo par station**, pour les deux passes sur
-une chronique de quarante ans. Une interruption ne fait rien perdre : les
-réponses déjà reçues sont gardées dans `.sources/` et ne sont pas redemandées.
+une chronique de quarante ans.
+
+### Suivre un téléchargement
+
+Chaque fenêtre est annoncée quand elle arrive, avec l'avancement dans la station
+et une estimation du temps restant :
+
+```
+Téléchargement de 8 station(s), passes raw et most_valid.
+  [1/8] V720001002  Le Rhône à Tarascon - DREAL      1994-12-01 à 2026-09-20
+        raw         1994-12-01 -> 1995-11-30     30 287 pts     2 %
+        raw         1995-12-01 -> 1999-03-19    112 635 pts     7 %
+        ...
+        most_valid  2019-06-22 -> 2026-09-20    114 544 pts   100 %
+        2 825 465 lignes, 14.73 Mo, 4 min 51 s
+  reste environ 22 min pour 7 station(s)
+```
+
+La largeur des fenêtres n'est pas fixe : elle suit la densité observée, si bien
+qu'une année dense et seize années éparses coûtent la même requête.
+L'avancement est donc mesuré sur la période couverte, pas sur le nombre de
+fenêtres.
+
+Une interruption ne fait rien perdre : les réponses déjà reçues sont gardées
+dans `.sources/` et ne sont pas redemandées. Relancer la même commande reprend
+où elle s'était arrêtée, sans coûter une seule requête pour ce qui est déjà là.
+`--silencieux` n'affiche que les erreurs.
 
 ## À quoi ressemblent les données
 

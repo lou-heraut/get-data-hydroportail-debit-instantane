@@ -10,6 +10,7 @@ columns come out as the producer published them, and the reader decides.
 from __future__ import annotations
 
 import logging
+import time
 from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
@@ -286,6 +287,41 @@ def summary(folder: str | Path = DEFAULT_FOLDER) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------
+#  Telling the user where the download is
+#
+#  A full campaign runs for hours. Seeing each window land says the run is
+#  alive, but not how far it has come nor how long is left, which is precisely
+#  what someone launching it overnight needs to know.
+# --------------------------------------------------------------------------
+
+def _duree(secondes: float) -> str:
+    secondes = int(secondes)
+    if secondes < 60:
+        return f"{secondes} s"
+    if secondes < 3600:
+        return f"{secondes // 60} min {secondes % 60:02d} s"
+    return f"{secondes // 3600} h {(secondes % 3600) // 60:02d} min"
+
+
+def _progres(status: str, begin: date, finish: date, rang: int, passes: int):
+    """Affiche chaque fenêtre avec l'avancement dans la station.
+
+    L'avancement est mesuré sur la période couverte et non sur le nombre de
+    fenêtres, puisque leur largeur suit la densité : une fenêtre peut valoir un
+    an ou seize, et les compter donnerait une barre qui saute.
+    """
+    total_jours = max(1, (finish - begin).days + 1)
+
+    def afficher(debut: date, fin: date, n: int, cumul: int) -> None:
+        fait = (fin - begin).days + 1
+        part = (rang + fait / total_jours) / passes
+        logger.info("        %-11s %s -> %s  %9s pts   %3.0f %%",
+                    status, debut, fin, f"{n:,}".replace(",", " "), 100 * part)
+
+    return afficher
+
+
+# --------------------------------------------------------------------------
 #  The fact table
 # --------------------------------------------------------------------------
 
@@ -391,36 +427,45 @@ def download(
                 len(working), " et ".join(statuts))
 
     resolutions = []
+    depart = time.monotonic()
     for number, row in enumerate(working.itertuples(), start=1):
         code = row.code_station
         begin = date.fromisoformat(row.date_debut_instantane)
         finish = date.fromisoformat(row.date_fin_instantane)
-        logger.info("  [%d/%d] %s, %s à %s", number, len(working), code, begin, finish)
+        logger.info("  [%d/%d] %s  %s  %s à %s", number, len(working), code,
+                    str(row.libelle_station)[:34].ljust(34), begin, finish)
+        debut_station = time.monotonic()
 
         frames = []
-        for status in statuts:
+        for rang, status in enumerate(statuts):
             points = api.fetch_series(
                 cache, code, status, begin, finish,
-                on_progress=lambda a, b, n, total, s=status: logger.info(
-                    "      %s %s -> %s : %s pts (total %s)", s, a, b,
-                    f"{n:,}".replace(",", " "), f"{total:,}".replace(",", " ")))
+                on_progress=_progres(status, begin, finish, rang, len(statuts)))
             for point in points:
-                for kind, key in (("s", "s"), ("q", "q"), ("m", "m"), ("c", "c")):
-                    unknown[kind].add(int(point.get(key) or 0))
+                for kind in ("s", "q", "m", "c"):
+                    unknown[kind].add(int(point.get(kind) or 0))
             frames.append(_to_frame(code, points, most_valid=(status == "most_valid")))
             del points
 
         merged = _merge_passes(frames)
         del frames
-        logger.info("      %s lignes après fusion",
-                    f"{len(merged):,}".replace(",", " "))
+        taille = 0.0
         if write and not merged.empty:
             mesures.mkdir(parents=True, exist_ok=True)
             path = mesures / f"{code}.parquet"
             merged.to_parquet(path, compression="zstd", index=False)
-            logger.info("      %s : %.2f Mo", path.name, path.stat().st_size / 1e6)
+            taille = path.stat().st_size / 1e6
+        logger.info("        %s lignes, %.2f Mo, %s",
+                    f"{len(merged):,}".replace(",", " "), taille,
+                    _duree(time.monotonic() - debut_station))
         resolutions.append(_resolution(merged))
         del merged
+
+        restantes = len(working) - number
+        if restantes:
+            reste = (time.monotonic() - depart) / number * restantes
+            logger.info("  reste environ %s pour %d station(s)",
+                        _duree(reste), restantes)
 
     tables["couverture"] = _fill_resolution(tables["couverture"], resolutions)
 
