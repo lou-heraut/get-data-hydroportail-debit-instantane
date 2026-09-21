@@ -289,14 +289,34 @@ sont des codes de site, quelle profondeur et quels trous chacun offre.
 
 ### `ref_codes.csv`
 
-Une ligne par valeur rencontrée : `type` (`s`, `q`, `m`, `c`), `code`,
-`libelle`, `definition`, `nomenclature_sandre`, `source`. Il est **engendré**
-depuis l'index Sandre, pas saisi à la main, pour qu'un code nouveau apparaisse
-tout seul.
+**Pourquoi il existe.** Chaque point arrive avec quatre nombres collés dessus,
+`s`, `q`, `m` et `c`. Sans nomenclature ce sont quatre entiers opaques ; avec
+elle, ce sont quatre informations de qualité fournies par le producteur.
 
-Les quatre nomenclatures sont 510, 515, 512 et 923. Le piège des nomenclatures
+Le cas qui montre l'enjeu est `q = 12`, qui veut dire **« douteuse »** : le
+producteur signale lui-même ce point comme suspect. Sur septembre 2026 à
+Tarascon, 2 018 des 5 754 points bruts le sont, soit 35 %. Une analyse qui
+calcule des gradients d'éclusée sur la série brute les avalerait tous sans le
+savoir, parce que dans le fichier ce n'est qu'un `12` dans une colonne.
+`ref_codes.csv` est ce qui rend cette information lisible ; sans lui, autant ne
+pas livrer les colonnes.
+
+**Sa forme.** Une ligne par valeur : `type` (`s`, `q`, `m`, `c`), `code`,
+`libelle`, `definition`, `nomenclature_sandre`, `source`. Les quatre
+nomenclatures sont 510, 515, 512 et 923, et le piège des nomenclatures
 homonymes est documenté dans [SOURCE.md](SOURCE.md) : l'appariement se fait sur
 les valeurs de code, jamais sur le titre.
+
+**La table est figée dans `schema.py`**, pas rapatriée à chaque exécution.
+Vingt lignes qui bougent tous les dix ans ne justifient pas de dépendre d'un
+troisième service à chaque lancement, ni qu'une panne du Sandre casse un
+téléchargement HydroPortail. C'est aussi ce que fait le dépôt voisin ONDE avec
+son vocabulaire d'écoulement.
+
+La contrepartie est que **le contrôle final signale tout code absent de la
+table**. C'est le seul moment où l'on a besoin d'apprendre qu'une nomenclature a
+bougé, et cela arrive alors comme un avertissement explicite plutôt que comme un
+libellé vide.
 
 ## Le cache des réponses, `.sources/`
 
@@ -343,9 +363,10 @@ ici, et elles sont mesurées.
 2. **Une requête à la fois**, aucun parallélisme, jamais. C'est la règle qui
    protège réellement le service.
 3. **Temporisation adaptative**, au moins aussi longue que la requête
-   précédente a mis à répondre, plancher de 2 secondes. Une réponse lourde ou un
-   serveur qui peine nous ralentissent alors automatiquement, ce qu'un délai
-   fixe ne sait pas faire.
+   précédente a mis à répondre. Une réponse lourde ou un serveur qui peine nous
+   ralentissent alors automatiquement, ce qu'un délai fixe ne sait pas faire.
+   Le plancher n'est pas choisi au jugé mais **calibré par la mesure**, voir
+   ci-dessous.
 4. **Un peu d'aléatoire**, de l'ordre de 20 %, pour lisser la charge. La raison
    est le lissage, pas le camouflage : chercher à passer pour un humain serait
    de l'évasion, et c'est précisément ce qui ferait ressembler un usage légitime
@@ -355,6 +376,52 @@ ici, et elles sont mesurées.
 6. **Reprise sur disque**, pour qu'une interruption ne fasse jamais
    retélécharger ce qui est déjà là.
 7. **Campagnes longues hors heures ouvrées.**
+
+### Calibrer le rythme plutôt que le deviner
+
+Un plancher de deux secondes serait un chiffre arbitraire, ni prudent ni
+efficace, juste inventé. Le rythme de croisière est donc **mesuré en phase 2**,
+par une expérience courte et bornée dont le résultat part dans
+[SOURCE.md](SOURCE.md) comme n'importe quelle autre mesure.
+
+**Le principe : on cherche le point de fonctionnement sûr, pas le point de
+rupture.** Il n'est pas nécessaire de faire plier un service pour savoir à
+quelle allure il est à l'aise. Le protocole mesure le temps de réponse d'une
+requête identique à cadence décroissante, et **s'arrête au premier signe de
+fatigue** plutôt que de continuer jusqu'à l'échec :
+
+```
+requete temoin identique, repetee, en faisant varier le delai entre requetes
+  delai genereux        -> temps de reponse de reference
+  on resserre par paliers
+  des que le temps de reponse s'ecarte de la reference     -> on s'arrete
+  rythme retenu = dernier palier sain, avec une marge confortable
+```
+
+La falaise HTTP 500 a déjà été rencontrée une fois, involontairement, et elle a
+suffi à nous apprendre ce qu'il fallait savoir. **On n'en cherche pas une
+seconde.**
+
+Cette calibration est aussi ce qui permet d'annoncer honnêtement la durée d'une
+campagne complète, de l'ordre de quelques heures pour 68 stations, plutôt que de
+la subir.
+
+### Ce que le README doit dire à l'utilisateur
+
+La politesse ne peut pas être entièrement dans le code, puisque c'est
+l'utilisateur qui choisit quand et combien il lance. Le README doit donc porter,
+comme des recommandations et non comme des contraintes techniques :
+
+- **lancer les campagnes longues la nuit ou le week-end**, hors heures ouvrées ;
+- **ne jamais lancer plusieurs exécutions en parallèle** pour aller plus vite,
+  ce qui annulerait d'un coup toutes les précautions du code ;
+- **commencer par `--inventaire`**, puis ne télécharger que ce dont on a besoin
+  avec `--statuts`, plutôt que de tout prendre par défaut et de trier après ;
+- **garder le cache `.sources/`**, qui évite de redemander au service ce qu'il a
+  déjà donné ;
+- et dire en une phrase que cette source est **un service public gratuit sans
+  contrepartie**, dont la capacité est finie et partagée avec tous les autres
+  usagers.
 
 ### Comment s'identifier sans exposer qui que ce soit
 

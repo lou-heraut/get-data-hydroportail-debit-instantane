@@ -21,6 +21,13 @@ phase 7   controles                           croise Hub'Eau, inclusion des stat
 phase 8   outil de reechantillonnage          voir ci-dessous
 ```
 
+**La phase 2 commence par la calibration du rythme**, une expérience courte
+décrite dans [DESIGN.md](DESIGN.md) : on mesure à quelle cadence le service
+répond sans fatiguer, on s'arrête au premier signe de ralentissement, et le
+résultat part dans [SOURCE.md](SOURCE.md) comme n'importe quelle autre mesure.
+Tant qu'elle n'est pas faite, le plancher de temporisation reste un chiffre
+inventé, et la durée annoncée d'une campagne reste une supposition.
+
 La phase 3 est le premier livrable utile, et elle est possible **avant** tout
 téléchargement lourd grâce à la carte `QIXnJ` : une requête par station donne
 les bornes, la couverture et le mélange de statuts. C'est ce qui permet de
@@ -145,6 +152,21 @@ absence.**
 Le fichier `chantier.md` est éclaté par objectif, et ce qui n'était pas tranché
 devient une liste explicite d'arbitrages plutôt qu'une ambiguïté noyée dans la
 prose.
+
+### 21 septembre 2026, rythme et nomenclature
+
+Le plancher de temporisation de deux secondes est retiré : c'était un chiffre
+inventé, et une mesure vaut mieux qu'une prudence de façade. La phase 2 s'ouvre
+donc sur une calibration, qui cherche le point de fonctionnement sûr et non le
+point de rupture. La durée d'une campagne complète, de l'ordre de quelques
+heures, cesse d'être une supposition.
+
+`ref_codes.csv` est figé dans le code plutôt que rapatrié du Sandre à chaque
+exécution, avec un contrôle qui signale tout code inconnu. Vingt lignes
+décennales ne valent pas une dépendance réseau supplémentaire. L'occasion a
+montré que le plan disait ce qu'était cette table sans jamais dire à quoi elle
+sert ; c'est corrigé dans [DESIGN.md](DESIGN.md), avec le cas de `q = 12`
+« douteuse » qui touche 35 % du brut récent à Tarascon.
 
 ### 21 septembre 2026, arbitrages rendus
 

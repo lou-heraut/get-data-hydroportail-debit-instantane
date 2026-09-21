@@ -39,6 +39,22 @@ Une seule table de faits, **une ligne par point publié**, avec les quatre codes
 de qualité du Sandre conservés tels quels. Aucun filtrage n'est appliqué par
 défaut : le logiciel livre de quoi décider, et laisse le chercheur décider.
 
+## Utiliser la source avec ménagement
+
+HydroPortail est **un service public gratuit et sans contrepartie**, dont la
+capacité est finie et partagée avec tous ses autres usagers. Le logiciel prend
+ses précautions (une requête à la fois, compression, temporisation adaptative,
+fenêtres dimensionnées), mais elles ne valent que si l'usage suit :
+
+- **lancer les campagnes longues la nuit ou le week-end.** Une extraction
+  complète dure quelques heures ;
+- **ne jamais lancer plusieurs exécutions en parallèle** pour aller plus vite :
+  cela annule d'un coup toutes les précautions du code ;
+- **commencer par `--inventaire`**, qui montre ce qui existe sans rien
+  télécharger de lourd, puis ne prendre que le nécessaire avec `--statuts` ;
+- **garder le cache `.sources/`**, qui évite de redemander ce qui a déjà été
+  donné.
+
 ## Où lire quoi
 
 | fichier | ce qu'il contient |
