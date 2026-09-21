@@ -344,14 +344,40 @@ La règle vient de la falaise HTTP 500, pas du quota annoncé.
 1. **Viser environ 100 000 points par réponse**, ce qui vaut une station-année
    de brut à 5 minutes, environ 5 secondes et 570 Ko sur le fil. C'est
    confortablement sous la falaise, mesurée entre 420 000 et 630 000 points.
-2. **Garder `step` petit.** Un grand pas abaisse le compteur de quota sans
-   alléger la réponse, donc il fait accepter des requêtes que le serveur ne sait
-   pas produire. Il ne sert à rien d'autre qu'au quota, puisqu'il ne
-   sous-échantillonne pas.
-3. **Sur un 500, couper la fenêtre en deux et réessayer**, jamais reculer
+2. **La fenêtre suit l'estimation de densité, dans les deux sens.** Après chaque
+   réponse, la densité observée dimensionne la suivante. Une seule règle, deux
+   comportements opposés :
+
+   ```
+   Tarascon, most_valid, 32 ans        Tarascon, raw
+     1re fenetre : 1 an -> 6 077 pts     1re fenetre : 1 an -> 105 209 pts
+     suivante : 100 000 / 6 077          suivante : 100 000 / 105 209
+               = 16 ans                            = 0,95 an
+     -> 3 requetes en tout               -> reste a 1 an
+   ```
+
+   **Sans la croissance, la donnée la plus légère coûterait le plus cher** : 32
+   requêtes par station pour le validé, ramenant à chaque fois un quatorzième de
+   ce que le service sait donner.
+3. **`step` est un bouton de quota, pas un garde-fou.** Le quota vaut
+   `minutes / step <= 500 000`, donc une fenêtre de 16 ans est refusée par un
+   HTTP 400 tant que `step` reste à 1 :
+
+   ```
+   16 ans = 8 409 600 minutes
+     step = 1    8 409 600 / 1  = 8 409 600   refus, 17 fois au-dessus
+     step = 17   8 409 600 / 17 =   494 682   accepte
+   ```
+
+   Le relever ne cache rien, puisque `step` ne change pas ce qui revient. L'ordre
+   des opérations est donc **estimer les points, en déduire la fenêtre, puis
+   mettre `step` au minimum qui la fasse accepter**. Jamais l'inverse : déduire
+   la fenêtre du quota ferait passer 19 ans de brut, que le serveur ne sait pas
+   produire. La protection est notre estimation, elle ne l'a jamais été.
+4. **Sur un 500, couper la fenêtre en deux et réessayer**, jamais reculer
    exponentiellement : un 500 dit « trop gros », pas « en panne ». Un recul
    exponentiel à cinq tentatives ferait replanter le service cinq fois.
-4. **Sur 429 et 503, reculer exponentiellement**, et s'arrêter franchement après
+5. **Sur 429 et 503, reculer exponentiellement**, et s'arrêter franchement après
    quelques échecs consécutifs.
 
 ## Politesse envers HydroPortail
@@ -567,8 +593,41 @@ donne le signal de révision qui manque.
 Conforme aux dépôts voisins :
 
 ```
-download_hydroportail.py    interface en ligne de commande
-hydroportail/api.py         couche HTTP, politesse, quota, fenetrage, reprise
-hydroportail/schema.py      colonnes, types, vocabulaire, datapackage
-hydroportail/download.py    orchestration, ecriture, relecture
+download_hydroportail.py    ~130 l   interface en ligne de commande
+hydroportail/api.py         ~300 l   HTTP, politesse, fenetrage, cache, Hub'Eau
+hydroportail/schema.py      ~350 l   colonnes, types, vocabulaire, datapackage
+hydroportail/download.py    ~450 l   orchestration, ecriture, relecture
+verifier_hydroportail.py    ~130 l   non-perte et integrite
+tests/                      ~180 l   les quatre fonctions pures
 ```
+
+`api.py` porte aussi les quelques lignes qui interrogent le référentiel des
+stations de Hub'Eau, comme `onde/api.py` le fait pour le sien. La règle
+d'isolement tient : une rupture d'HydroPortail reste la correction d'un seul
+fichier.
+
+### Ce qu'on teste, et où l'on s'arrête
+
+**On ne teste que ce qui est pur, déterministe, et dont un bug serait
+invisible.** Pas de simulacre de HTTP, pas d'écriture de fichiers, pas
+d'objectif de couverture. Cette règle est ce qui empêche la suite de tests de
+devenir un chantier à elle seule.
+
+Ce qui passe ce filtre est exactement les quatre endroits où de la donnée peut
+disparaître sans que rien ne le signale :
+
+| ce qu'on teste | le bug qu'on attrape |
+|---|---|
+| le fenêtrage | des fenêtres qui laissent un trou d'un jour, ou qui se recouvrent et comptent double |
+| la fusion des deux passes | un point écrasé par le dédoublonnage, ou `most_valid` posé à faux |
+| le calcul de couverture | médiane et p90 faux sur les cas limites, comme une année à un seul point |
+| la conversion | le litre pris pour le m3, un code qui déborde en entier 8 bits, une date lue en heure locale |
+
+Le fenêtrage justifie à lui seul l'exercice : « les fenêtres pavent la période
+sans trou ni recouvrement » se vérifie en cinq lignes sur une entrée
+synthétique, et ne se vérifie pratiquement pas sur des données réelles.
+
+Tout ce qui demande le réseau est traité autrement, comme chez les voisins :
+des valeurs de référence dans [CLAUDE.md](CLAUDE.md), et
+`verifier_hydroportail.py` qui rejoue le cache `.sources/` pour vérifier que
+tout point reçu se retrouve dans `mesures/`.

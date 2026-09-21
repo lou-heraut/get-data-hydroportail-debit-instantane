@@ -1,0 +1,44 @@
+[project]
+name = "get-data-hydroportail-debit-instantane"
+version = "0.1.0"
+description = "Téléchargement des chroniques de débit instantané depuis HydroPortail"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Louis Héraut", email = "louis.heraut@inrae.fr" }]
+keywords = ["HydroPortail", "debit", "hydrometrie", "eclusee", "instantane", "France", "SCHAPI", "Sandre"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Natural Language :: French",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Hydrology",
+]
+
+dependencies = [
+    "requests>=2.31",
+    "pandas>=2.1",
+    "pyarrow>=14",
+]
+
+[project.optional-dependencies]
+# Vérification facultative de la conformité de datapackage.json
+validation = ["frictionless>=5"]
+# Tests des fonctions pures : fenêtrage, fusion, couverture, conversion
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/lou-heraut/get-data-hydroportail-debit-instantane"
+"Source des données" = "https://hydro.eaufrance.fr/"
+"API Hub'Eau hydrométrie" = "https://hubeau.eaufrance.fr/page/api-hydrometrie"
+"Nomenclatures Sandre" = "https://api.sandre.eaufrance.fr/referentiels/v1/nsa.json"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["hydroportail"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

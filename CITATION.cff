@@ -1,0 +1,63 @@
+cff-version: 1.2.0
+title: get-data-hydroportail-debit-instantane
+message: >-
+  Si vous utilisez ce logiciel, merci de le citer comme indiqué ci-dessous.
+  Pensez également à citer les données hydrométriques elles-mêmes, référencées
+  plus bas.
+type: software
+abstract: >-
+  Outil en ligne de commande pour télécharger les chroniques de débit instantané
+  depuis HydroPortail, seule source à les diffuser sur tout leur historique, et
+  les restructurer en un jeu de tables documenté : une table de faits au format
+  parquet portant une ligne par point publié avec ses quatre codes de qualité
+  Sandre, des tables de référence décrivant la couverture réellement mesurée
+  station par station et année par année, et des métadonnées Frictionless Data
+  Package portant les types de colonnes, la provenance et les empreintes
+  SHA-256.
+authors:
+  - family-names: Héraut
+    given-names: Louis
+    email: louis.heraut@inrae.fr
+    orcid: 'https://orcid.org/0009-0006-4372-0923'
+    affiliation: 'INRAE, UR RiverLy, Villeurbanne, France'
+version: 0.1.0
+date-released: '2026-09-21'
+license: GPL-3.0-or-later
+repository-code: 'https://github.com/lou-heraut/get-data-hydroportail-debit-instantane'
+keywords:
+  - HydroPortail
+  - débit
+  - hydrométrie
+  - éclusée
+  - instantané
+  - France
+  - SCHAPI
+  - Sandre
+  - FAIR
+references:
+  - type: database
+    title: Banque Hydro, diffusée par HydroPortail
+    abstract: >-
+      Chroniques de hauteur d'eau et de débit des cours d'eau français, mesurées
+      par les services hydrométriques de l'État. Le débit n'est pas mesuré
+      directement : il est calculé depuis une hauteur par une courbe de tarage
+      établie et révisée par l'hydromètre.
+    authors:
+      - name: >-
+          SCHAPI, Service central d'hydrométéorologie et d'appui à la prévision
+          des inondations
+        website: 'https://www.vigicrues.gouv.fr/'
+    url: 'https://hydro.eaufrance.fr/'
+    notes: >-
+      Données publiques, dont les mentions légales d'HydroPortail indiquent que
+      l'accès est libre. Ces conditions sont distinctes de la licence du présent
+      logiciel.
+  - type: database
+    title: Nomenclatures Sandre 510, 515, 512 et 923
+    abstract: >-
+      Vocabulaire contrôlé du statut, de la qualification, de la méthode
+      d'obtention et de la continuité des observations hydrométriques.
+    authors:
+      - name: Sandre, Service d'administration nationale des données et référentiels sur l'eau
+        website: 'https://www.sandre.eaufrance.fr/'
+    url: 'https://api.sandre.eaufrance.fr/referentiels/v1/nsa.json'

@@ -1,7 +1,7 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : **aucun code écrit**, la source est instruite et les
-choix de conception sont tranchés. La v1 peut être construite.
+État au 21 septembre 2026 : la source est instruite, les choix de conception
+sont tranchés, **la phase 1 est faite**.
 
 Les faits sont dans [SOURCE.md](SOURCE.md), les choix dans
 [DESIGN.md](DESIGN.md). Ce fichier ne garde que l'avenir : ce qui est fait en
@@ -9,8 +9,12 @@ sort, voir la section « Cycle de vie des fichiers » de [CLAUDE.md](CLAUDE.md).
 
 ## Les phases
 
+Cette liste est le plan de la v1. Elle graduera d'un bloc vers le
+`CHANGELOG.md` au moment de la livraison ; d'ici là les phases faites restent
+visibles pour que l'avancement se lise d'un coup d'oeil.
+
 ```
-phase 1   squelette du depot                  pyproject, LICENSE, CITATION, SPDX, venv
+phase 1   squelette du depot           FAIT   pyproject, LICENSE, CITATION, venv, ref_codes
 phase 2   couche API isolee                   politesse, fenetrage, falaise 500, reprise
 phase 3   referentiel et couverture           stations.csv, couverture.csv, ref_codes.csv
 phase 4   telechargement, 2 passes            la table de faits
@@ -20,6 +24,19 @@ phase 7   controles                           croise Hub'Eau, inclusion des stat
 ---- livraison v1 ----
 phase 8   outil de reechantillonnage          voir ci-dessous
 ```
+
+Chaque phase se termine sur une **preuve chiffrée**, prise dans les mesures de
+[SOURCE.md](SOURCE.md) :
+
+| # | preuve |
+|---|---|
+| 1 | `pip install -e .` passe, la table des codes rend ses 25 lignes |
+| 2 | Tarascon 2024 en `raw` rend **105 209 points**, et une fenêtre de 8 ans est coupée au lieu de planter |
+| 3 | les 10 stations de test rendent **la table de couverture de `SOURCE.md` à l'identique** |
+| 4 | Tarascon 2024 rend **111 286 lignes** et **0,92 Mo en zstd** |
+| 5 | `frictionless` valide le datapackage |
+| 6 | les exemples de relecture Python et R tournent vraiment |
+| 7 | recoupement Hub'Eau au litre près, inclusion des statuts vérifiée |
 
 La phase 3 est le premier livrable utile, et elle est possible **avant** tout
 téléchargement lourd grâce à la carte `QIXnJ` : une requête par station donne

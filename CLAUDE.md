@@ -189,10 +189,11 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
   répondre par un recul exponentiel et plusieurs tentatives ferait replanter le
   service autant de fois. La bonne réaction est de **couper la fenêtre en
   deux**. Le recul exponentiel reste correct pour 429 et 503.
-- **Ne pas augmenter `step` pour élargir une fenêtre.** `step` ne
-  sous-échantillonne rien, il ne sert qu'au compteur de quota : un grand pas
-  fait donc accepter une requête que le serveur ne sait pas produire. Viser
-  environ 100 000 points par réponse.
+- **Ne jamais déduire la fenêtre du quota.** L'ordre est : estimer les points
+  attendus, en déduire la fenêtre en visant environ 100 000 points, puis mettre
+  `step` au minimum qui fasse accepter cette fenêtre. Pris à l'envers, le quota
+  laisse passer 19 ans de brut que le serveur ne sait pas produire. `step` est
+  un bouton de quota, la protection est l'estimation.
 - **gzip est obligatoire**, facteur 55 sur la bande passante.
 - **Une requête à la fois, jamais de parallélisme.**
 - **L'unité des valeurs est `series.unit`, pas `unitQ`.** `unitQ` vaut `m3`
