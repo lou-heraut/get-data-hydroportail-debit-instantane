@@ -1,7 +1,8 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : la source est instruite, les choix de conception
-sont tranchés, **la phase 1 est faite**.
+État au 21 septembre 2026 : **les phases 1 à 3 sont faites**, chacune vérifiée
+contre les mesures de [SOURCE.md](SOURCE.md). L'inventaire tourne et rend la
+table de couverture des dix stations de test à l'identique.
 
 Les faits sont dans [SOURCE.md](SOURCE.md), les choix dans
 [DESIGN.md](DESIGN.md). Ce fichier ne garde que l'avenir : ce qui est fait en
@@ -15,8 +16,8 @@ visibles pour que l'avancement se lise d'un coup d'oeil.
 
 ```
 phase 1   squelette du depot           FAIT   pyproject, LICENSE, CITATION, venv, ref_codes
-phase 2   couche API isolee                   politesse, fenetrage, falaise 500, reprise
-phase 3   referentiel et couverture           stations.csv, couverture.csv, ref_codes.csv
+phase 2   couche API isolee            FAIT   politesse, fenetrage, falaise 500, cache
+phase 3   referentiel et couverture    FAIT   stations.csv, couverture.csv, ref_codes.csv
 phase 4   telechargement, 2 passes            la table de faits
 phase 5   datapackage et empreintes           datapackage.json
 phase 6   README, relecture Python et R       DESIGN.md y est replie
@@ -162,6 +163,33 @@ absence.**
 Le fichier `chantier.md` est éclaté par objectif, et ce qui n'était pas tranché
 devient une liste explicite d'arbitrages plutôt qu'une ambiguïté noyée dans la
 prose.
+
+### 21 septembre 2026, phases 1 à 3
+
+Le squelette, la couche API et l'inventaire. Trois découvertes faites en
+écrivant le code plutôt qu'en le planifiant.
+
+**Les fenêtres doivent grandir autant que rétrécir.** Le plan ne prévoyait que
+la coupe en deux sur un 500. En chiffrant les requêtes, le validé épars aurait
+coûté trente-deux requêtes par station contre trois, soit plus cher que le brut
+dense, ce qui est absurde. La largeur suit maintenant la densité observée dans
+les deux sens.
+
+**`step` est un bouton de quota, pas un garde-fou.** À `step=1` une fenêtre est
+plafonnée à 347 jours, ce qui rendait impossible la fenêtre de seize ans dont le
+validé a besoin. L'ordre est donc d'estimer les points, d'en déduire la fenêtre,
+puis de mettre `step` au minimum qui la fasse accepter.
+
+**`step` ne veut pas dire la même chose selon la famille**, et c'est le piège le
+plus dangereux rencontré : en journalier, c'est le « n » de `QIXnJ`. L'inventaire
+rendait 728 jours au lieu de 16 684 sans lever la moindre erreur, et seule la
+valeur de référence l'a montré. C'est la justification par l'exemple des preuves
+chiffrées attachées à chaque phase.
+
+S'y ajoutent deux contraintes que la source impose et que les mesures de la
+veille n'avaient pas rencontrées : `step` est borné à 1..30, ce qui plafonne une
+fenêtre à 10 416 jours, et un HTTP 504 peut survenir sur une fenêtre large, qui
+est traité comme transitoire puis comme une fenêtre trop large.
 
 ### 21 septembre 2026, rythme et nomenclature
 

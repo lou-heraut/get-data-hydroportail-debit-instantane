@@ -189,6 +189,13 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
   répondre par un recul exponentiel et plusieurs tentatives ferait replanter le
   service autant de fois. La bonne réaction est de **couper la fenêtre en
   deux**. Le recul exponentiel reste correct pour 429 et 503.
+- **`step` ne veut pas dire la même chose selon la famille de grandeur.** En
+  instantané c'est un bouton de quota qui ne change rien à ce qui revient. En
+  journalier c'est le « n » du nom : `QIXnJ` avec `step=20` rend les maxima sur
+  vingt jours, soit un vingtième des lignes, **sans que rien ne le signale**.
+  Hors famille instantanée, `step` reste à 1. L'erreur a déjà été commise et
+  n'a été vue que grâce à une valeur de référence.
+- **`step` est borné à 1..30**, ce qui plafonne une fenêtre à 10 416 jours.
 - **Ne jamais déduire la fenêtre du quota.** L'ordre est : estimer les points
   attendus, en déduire la fenêtre en visant environ 100 000 points, puis mettre
   `step` au minimum qui fasse accepter cette fenêtre. Pris à l'envers, le quota
@@ -219,15 +226,35 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
 À compléter quand le code existera. La forme attendue, reprise des voisins :
 
 ```bash
-python download_hydroportail.py --inventaire    # la carte QIXnJ, quelques requetes
-python download_hydroportail.py --stations <jeu de test>
-python -c "from frictionless import Package; print(Package('donnees_hydroportail/datapackage.json').validate().valid)"
+source .python_env/bin/activate
+pytest                                          # les fonctions pures, instantane
+python download_hydroportail.py --inventaire --stations \
+  W011001001 W283201001 V271201001 V720001002 X031001001 \
+  Y532501001 W107403003 W107403001 W103000301 V031661301
 ```
 
-Le jeu de test de dix stations et les volumes attendus station par station sont
-dans [SOURCE.md](SOURCE.md). Ils servent de valeurs de référence : un écart
-important signale soit une régression, soit une évolution du service, et les
-deux méritent d'être compris avant d'être acceptés.
+Attendu sur ces dix stations, et **en croissance d'un jour par jour** pour
+celles qui sont en service :
+
+```
+W011001001  16684 j  1981-01-01 a 2026-09-20  100 %
+W283201001   2510 j  2019-11-01 a 2026-09-20  100 %
+V271201001  16699 j  1981-01-01 a 2026-09-20  100 %
+V720001002  11217 j  1994-12-01 a 2026-09-20   97 %
+X031001001   5691 j  2010-04-03 a 2026-09-20   95 %
+Y532501001  19460 j  1970-12-24 a 2026-04-12   96 %   fermee, ne bouge plus
+W107403003   1886 j  2021-07-16 a 2026-09-20  100 %
+W107403001   3264 j  2011-06-02 a 2026-09-14   58 %   couverture trouee
+W103000301      0    aucun debit instantane
+V031661301      0    aucun debit instantane
+couverture.csv : 240 lignes, statuts {4: 14, 8: 8, 12: 29, 16: 189}
+```
+
+**Un écart n'est jamais anodin.** C'est cette table qui a révélé que `step`
+changeait de sens d'une famille de grandeurs à l'autre : le code rendait 728
+jours au lieu de 16 684 sans lever la moindre erreur. Un écart signale soit une
+régression, soit une évolution du service, et les deux méritent d'être compris
+avant d'être acceptés.
 
 ## Licence
 

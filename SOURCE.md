@@ -271,11 +271,49 @@ Une demande trop large est refusée par un HTTP 400 portant un JSON :
 pas le nombre réel de points. La fenêtre maximale annoncée vaut donc
 `500 000 x pas` minutes.
 
-### `step` ne sous-échantillonne rien
+### `step` ne veut pas dire la même chose selon la famille
 
-Sur janvier 2024 à Tarascon, `step=1` et `step=20` rendent les mêmes 191 points
-aux mêmes horodatages. Pour le brut comme pour le validé, le paramètre ne sert
-qu'au quota.
+**C'est le piège le plus dangereux rencontré sur cette source**, parce qu'il ne
+casse rien : il rend simplement moins de données, sans le dire.
+
+Dans la famille **instantanée**, `step` ne sous-échantillonne rien. Sur janvier
+2024 à Tarascon, `step=1` et `step=20` rendent les mêmes 191 points aux mêmes
+horodatages, et sur la série validée de mars 2024 les pas 1, 5, 20 et 60 rendent
+les mêmes 481 horodatages. Le paramètre ne sert qu'au quota.
+
+Dans la famille **journalière**, `step` est le **`n` du nom de la grandeur**.
+`QIXnJ` se lit « débit instantané maximal **n** journalier », et le titre servi
+par la réponse le dit : « (n=1, non glissant) ». Demander `QIXnJ` avec `step=20`
+rend donc les maxima sur vingt jours, soit un vingtième des lignes.
+
+```
+QIXnJ most_valid, W011001001, toute la vie de la station
+  step = 1     16 684 jours      la carte de couverture
+  step = 20       728 jours      des maxima sur vingt jours
+```
+
+Rien dans la réponse ne signale la différence : mêmes colonnes, même forme,
+juste moins de lignes. L'écart n'a été vu que parce qu'une valeur de référence
+existait. **Pour toute grandeur journalière ou mensuelle, `step` doit rester à
+1.**
+
+Le quota, lui, ne s'applique pas de la même façon : une requête `QIXnJ` sur 126
+ans avec `step=1` est servie sans protester, alors que la même largeur en
+instantané serait refusée.
+
+### `step` est borné à 30
+
+« Le pas de temps doit être compris entre 1 et 30 », répond le formulaire en
+HTTP 400. Comme c'est le pas qui achète du quota en famille instantanée, cette
+borne plafonne la largeur d'une fenêtre à `30 x 500 000` minutes, soit **10 416
+jours, environ 28 ans et demi**, quelle que soit la densité de la série.
+
+### Les autres codes d'erreur
+
+Un **HTTP 504** a été observé sur une fenêtre large d'une station sans données.
+Contrairement au 500, il n'est pas systématiquement reproductible : il est
+traité comme transitoire, avec un recul exponentiel, puis comme une fenêtre trop
+large s'il persiste.
 
 ### La falaise HTTP 500
 
