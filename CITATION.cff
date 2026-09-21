@@ -20,7 +20,7 @@ authors:
     email: louis.heraut@inrae.fr
     orcid: 'https://orcid.org/0009-0006-4372-0923'
     affiliation: 'INRAE, UR RiverLy, Villeurbanne, France'
-version: 0.1.0
+version: 1.0.0
 date-released: '2026-09-21'
 license: GPL-3.0-or-later
 repository-code: 'https://github.com/lou-heraut/get-data-hydroportail-debit-instantane'

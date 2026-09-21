@@ -354,6 +354,7 @@ pas bougé, et que l'intégrité référentielle tient.
 | [SOURCE.md](SOURCE.md) | ce que HydroPortail, Hub'Eau et le Sandre font réellement, mesuré |
 | [DESIGN.md](DESIGN.md) | pourquoi le jeu est construit ainsi |
 | [ROADMAP.md](ROADMAP.md) | ce qui reste à faire |
+| [CHANGELOG.md](CHANGELOG.md) | ce que chaque version a apporté |
 | [CLAUDE.md](CLAUDE.md) | les conventions du dépôt et les pièges à ne pas « corriger » |
 
 `SOURCE.md` est le plus utile à qui veut réutiliser la source ailleurs : il

@@ -1,6 +1,6 @@
 [project]
 name = "get-data-hydroportail-debit-instantane"
-version = "0.1.0"
+version = "1.0.0"
 description = "Téléchargement des chroniques de débit instantané depuis HydroPortail"
 readme = "README.md"
 requires-python = ">=3.10"

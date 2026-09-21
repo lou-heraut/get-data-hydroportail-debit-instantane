@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-SCRIPT_VERSION = "0.1.0"
+SCRIPT_VERSION = "1.0.0"
 
 LICENSE = {
     "name": "GPL-3.0-or-later",
