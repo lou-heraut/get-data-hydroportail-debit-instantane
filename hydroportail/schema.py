@@ -184,8 +184,11 @@ FIELDS: dict[str, list[dict[str, Any]]] = {
            "Code de statut Sandre 510, parce que brut et validé n'ont ni la "
            "même profondeur ni la même densité. Voir ref_codes.csv."),
         _f("jours_avec_donnees", "integer",
-           "Jours de l'année portant une donnée de ce statut. Rempli dès "
-           "l'inventaire, sans rien télécharger de lourd."),
+           "Jours de l'année portant une donnée de ce statut. L'inventaire le "
+           "renseigne d'avance depuis la carte de couverture, qui étiquette "
+           "chaque jour par le statut de son maximum journalier ; le compte "
+           "exact remplace cette estimation dès que la chronique est "
+           "téléchargée."),
         _f("nb_points", "integer",
            "Nombre de points effectivement téléchargés. Vide tant que la "
            "chronique ne l'a pas été : vide veut dire « pas encore mesuré », "

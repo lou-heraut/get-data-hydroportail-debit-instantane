@@ -1,8 +1,8 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : **les phases 1 à 3 sont faites**, chacune vérifiée
-contre les mesures de [SOURCE.md](SOURCE.md). L'inventaire tourne et rend la
-table de couverture des dix stations de test à l'identique.
+État au 21 septembre 2026 : **les phases 1 à 4 sont faites**, chacune vérifiée
+contre les mesures de [SOURCE.md](SOURCE.md). Le jeu de test complet est
+téléchargé : 8 447 816 lignes, 47 Mo, en 25 minutes.
 
 Les faits sont dans [SOURCE.md](SOURCE.md), les choix dans
 [DESIGN.md](DESIGN.md). Ce fichier ne garde que l'avenir : ce qui est fait en
@@ -18,7 +18,7 @@ visibles pour que l'avancement se lise d'un coup d'oeil.
 phase 1   squelette du depot           FAIT   pyproject, LICENSE, CITATION, venv, ref_codes
 phase 2   couche API isolee            FAIT   politesse, fenetrage, falaise 500, cache
 phase 3   referentiel et couverture    FAIT   stations.csv, couverture.csv, ref_codes.csv
-phase 4   telechargement, 2 passes            la table de faits
+phase 4   telechargement, 2 passes     FAIT   la table de faits
 phase 5   datapackage et empreintes           datapackage.json
 phase 6   README, relecture Python et R       DESIGN.md y est replie
 phase 7   controles                           croise Hub'Eau, inclusion des statuts
@@ -163,6 +163,29 @@ absence.**
 Le fichier `chantier.md` est éclaté par objectif, et ce qui n'était pas tranché
 devient une liste explicite d'arbitrages plutôt qu'une ambiguïté noyée dans la
 prose.
+
+### 21 septembre 2026, phase 4
+
+Le téléchargement des deux passes et la table de faits. Le jeu de test complet
+sort en 24 min 51 s pour 8 447 816 lignes et 47 Mo, et l'année 2024 de Tarascon
+rend ses 111 286 lignes attendues.
+
+La table de couverture tient sa promesse. Sur l'Isère à Moûtiers, elle dit en
+une lecture que 1981 a une médiane de 100 minutes et un p90 de 302, donc ne
+décrit aucune éclusée, tandis que 2024 est à 5 minutes de médiane et 5 de p90
+en brut, donc la décrit parfaitement, et que le validé de 2024 la décrit aussi
+avec 5 et 15. C'est l'arbitrage station par station et année par année que la
+demande réclamait.
+
+Une correction en passant : `jours_avec_donnees` restait vide sur les lignes de
+statut brut. La carte de couverture étiquette chaque jour par le statut de son
+maximum journalier, donc un jour portant du brut et du validé n'est compté que
+sous l'un des deux. Le compte exact, tiré de la chronique, remplace désormais
+l'estimation dès que celle-ci est téléchargée.
+
+Point de vigilance mesuré : 1,58 Go de mémoire au pic, dominés par la plus
+grosse station. Cela ne croît pas avec le nombre de stations, mais une station
+beaucoup plus dense demanderait de traiter les fenêtres au fil de l'eau.
 
 ### 21 septembre 2026, phases 1 à 3
 

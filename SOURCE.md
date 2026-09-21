@@ -514,20 +514,45 @@ médian de 70 minutes et ne décrit pas une éclusée ; à Moûtiers elle en a 5
 points pour 8 906 bruts en mars 2024, donc elle la décrit. **Cela se décide
 station par station et année par année.**
 
-### Le poids sur disque
+### Le poids sur disque, et le coût d'une campagne
 
-Mesuré, pas estimé, sur la station-année de brut de Tarascon 2024, 105 209
-points, écrite en parquet avec les colonnes du produit :
+Mesuré sur le jeu de test complet, les deux passes, écrit en parquet zstd
+(21 septembre 2026) :
 
 ```
-mesures    111 286 lignes   snappy  1,065 Mo    9,6 octets par ligne
-                            zstd    0,916 Mo    8,2 octets par ligne
+station       lignes     Mo   o/ligne   periode
+V271201001  1 134 502   6,29     5,5    1981-01-01 a 2026-09-20
+V720001002  2 825 465  14,73     5,2    1994-12-01 a 2026-09-20
+W011001001  1 551 646   8,09     5,2    1981-01-01 a 2026-09-20
+W107403001    506 331   2,99     5,9    2011-06-02 a 2026-09-14
+W107403003    649 172   3,97     6,1    2021-07-16 a 2026-09-20
+W283201001    781 976   5,35     6,8    2019-11-01 a 2026-09-20
+X031001001    471 465   2,70     5,7    2010-04-03 a 2026-09-20
+Y532501001    527 259   2,88     5,5    1970-12-26 a 2026-04-12
+TOTAL       8 447 816  47,00
 ```
 
-Soit environ 1 Mo par station-année de brut à 5 minutes. Avec une douzaine
-d'années de brut seulement et une longue traîne de validé épars, l'ordre de
-grandeur pour 68 stations reste le gigaoctet, mais pour des raisons inverses de
-ce qu'on supposait : plus dense par année, moins profond dans le temps.
+**Environ 5,5 octets par ligne**, les quatre colonnes de codes étant presque
+constantes et les horodatages réguliers. Le cache des réponses pèse 38 Mo pour
+le même jeu, soit moins que le produit.
+
+Par extrapolation, **de l'ordre de 400 Mo pour 68 stations**, et non le
+gigaoctet supposé. Le jeu de test penche vers les longues chroniques, donc
+l'estimation est plutôt haute.
+
+Coût de la campagne, mesuré sur ces huit stations :
+
+```
+duree            24 min 51 s          soit environ 3 min par station
+CPU              8 %                  on attend le serveur, c'est voulu
+memoire au pic   1,58 Go              une station a la fois, ne croit pas avec leur nombre
+```
+
+Soit **environ trois heures et demie pour 68 stations**, ce qui confirme l'ordre
+de grandeur annoncé. La mémoire est le seul point de vigilance : elle est
+dominée par la plus grosse station, Tarascon et ses 2,8 millions de lignes, et
+une station beaucoup plus dense demanderait de traiter les fenêtres au fil de
+l'eau plutôt que de les accumuler.
 
 ## Site et station
 

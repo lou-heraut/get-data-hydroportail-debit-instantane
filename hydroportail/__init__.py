@@ -17,7 +17,7 @@ Typical use, once the download layer exists:
     df = read("donnees_hydroportail")
 """
 
-from .download import inventory, read_tables, summary
+from .download import download, inventory, read, read_tables, summary
 from .schema import SCRIPT_VERSION as __version__
 
-__all__ = ["inventory", "read_tables", "summary", "__version__"]
+__all__ = ["download", "inventory", "read", "read_tables", "summary", "__version__"]

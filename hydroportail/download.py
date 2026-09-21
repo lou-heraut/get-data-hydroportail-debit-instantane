@@ -264,6 +264,200 @@ def summary(folder: str | Path = DEFAULT_FOLDER) -> pd.DataFrame:
         logger.info("")
         logger.info("Couverture : %d lignes, statuts rencontrés %s.",
                     len(couverture), dict(sorted(statuses.items())))
-        logger.info("Les colonnes de résolution restent vides tant que les "
-                    "chroniques n'ont pas été téléchargées.")
+        if couverture["nb_points"].isna().all():
+            logger.info("Les colonnes de résolution restent vides tant que les "
+                        "chroniques n'ont pas été téléchargées.")
+        else:
+            manquantes = int(couverture["nb_points"].isna().sum())
+            if manquantes:
+                logger.info("%d ligne(s) sans résolution : station non "
+                            "téléchargée.", manquantes)
     return stations
+
+
+# --------------------------------------------------------------------------
+#  The fact table
+# --------------------------------------------------------------------------
+
+def _to_frame(code: str, points: Sequence[dict[str, Any]], most_valid: bool) -> pd.DataFrame:
+    """Points as published, one row each, nothing dropped and nothing judged."""
+    if not points:
+        return pd.DataFrame(columns=schema.columns("mesures"))
+    frame = pd.DataFrame(points, columns=["t", "v", "s", "q", "m", "c"])
+    out = pd.DataFrame({
+        "code_station": code,
+        "date_obs": pd.to_datetime(frame["t"], utc=True, format="ISO8601"),
+        # The source serves litres per second, which series.unit confirms on
+        # every response; unitQ claims m3 and would be wrong by a factor 1000.
+        "debit_m3s": frame["v"].astype("float64") / 1000.0,
+        "statut": frame["s"].fillna(0).astype("int8"),
+        "qualification": frame["q"].fillna(0).astype("int8"),
+        "methode": frame["m"].fillna(0).astype("int8"),
+        "continuite": frame["c"].fillna(0).astype("int8"),
+        "most_valid": most_valid,
+    })
+    return out
+
+
+def _merge_passes(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
+    """Union of the passes, deduplicated on the whole row.
+
+    The two passes overlap: on recent periods most_valid returns the very same
+    raw points. Deduplicating on the whole row rather than on
+    (station, date, statut) assumes nothing: two levels always carry two
+    different `statut`, but a single raw series already mixes two
+    `qualification`, so the narrower key would have to be argued for. The wider
+    one costs nothing.
+
+    ``most_valid`` is true as soon as either pass returned the row, which is
+    what makes ``mesures[most_valid]`` exactly the producer's own chronicle.
+    """
+    frames = [frame for frame in frames if not frame.empty]
+    if not frames:
+        return pd.DataFrame(columns=schema.columns("mesures"))
+    joined = pd.concat(frames, ignore_index=True)
+    keys = [column for column in schema.columns("mesures") if column != "most_valid"]
+    merged = joined.groupby(keys, as_index=False, sort=False)["most_valid"].max()
+    return merged.sort_values(["code_station", "date_obs", "statut"]).reset_index(drop=True)
+
+
+def _resolution(frame: pd.DataFrame) -> pd.DataFrame:
+    """Points, median and ninth decile of the gaps, per station, year and status.
+
+    The median alone lies at both ends of a chronicle: it climbs back to 72
+    minutes at Moûtiers in 2015 between two years at 15 and 12, and it says
+    nothing of a year whose third is missing. Read with the p90 and with the
+    days count, it says what it means.
+    """
+    if frame.empty:
+        return pd.DataFrame(columns=["code_station", "annee", "statut",
+                                     "jours_avec_donnees", "nb_points",
+                                     "intervalle_median_min", "intervalle_p90_min"])
+    work = frame[["code_station", "date_obs", "statut"]].copy()
+    work["annee"] = work["date_obs"].dt.year
+    rows = []
+    for (code, year, status), group in work.groupby(
+            ["code_station", "annee", "statut"], sort=True):
+        stamps = group["date_obs"].sort_values()
+        gaps = stamps.diff().dropna().dt.total_seconds() / 60.0
+        rows.append({
+            "code_station": code,
+            "annee": int(year),
+            "statut": int(status),
+            "jours_avec_donnees": stamps.dt.date.nunique(),
+            "nb_points": len(stamps),
+            # A single point in a year gives no gap at all, and an invented
+            # zero would read as "perfect resolution". Left empty.
+            "intervalle_median_min": round(float(gaps.median()), 1) if len(gaps) else None,
+            "intervalle_p90_min": round(float(gaps.quantile(0.9)), 1) if len(gaps) else None,
+        })
+    return pd.DataFrame(rows)
+
+
+def download(
+    folder: str | Path = DEFAULT_FOLDER,
+    codes: Sequence[str] = (),
+    statuts: Sequence[str] = api.STATUSES,
+    write: bool = True,
+) -> dict[str, pd.DataFrame]:
+    """Download the series themselves, one parquet file per station.
+
+    The inventory runs first, because it says over which period each station
+    has anything at all, and which carry no discharge and can be skipped. The
+    raw pass is asked over that whole period even where only validated data is
+    expected: raw does live underneath validated periods, and the windows
+    accelerate through the empty years by themselves.
+    """
+    folder = Path(folder)
+    cache = folder / ".sources"
+    mesures = folder / "mesures"
+    unknown = {kind: set() for kind in ("s", "q", "m", "c")}
+
+    tables = inventory(folder, codes, write=False)
+    stations = tables["stations"]
+    working = stations[stations["porte_debit"].astype(bool)]
+    logger.info("")
+    logger.info("Téléchargement de %d station(s), passes %s.",
+                len(working), " et ".join(statuts))
+
+    resolutions = []
+    for number, row in enumerate(working.itertuples(), start=1):
+        code = row.code_station
+        begin = date.fromisoformat(row.date_debut_instantane)
+        finish = date.fromisoformat(row.date_fin_instantane)
+        logger.info("  [%d/%d] %s, %s à %s", number, len(working), code, begin, finish)
+
+        frames = []
+        for status in statuts:
+            points = api.fetch_series(
+                cache, code, status, begin, finish,
+                on_progress=lambda a, b, n, total, s=status: logger.info(
+                    "      %s %s -> %s : %s pts (total %s)", s, a, b,
+                    f"{n:,}".replace(",", " "), f"{total:,}".replace(",", " ")))
+            for point in points:
+                for kind, key in (("s", "s"), ("q", "q"), ("m", "m"), ("c", "c")):
+                    unknown[kind].add(int(point.get(key) or 0))
+            frames.append(_to_frame(code, points, most_valid=(status == "most_valid")))
+            del points
+
+        merged = _merge_passes(frames)
+        del frames
+        logger.info("      %s lignes après fusion",
+                    f"{len(merged):,}".replace(",", " "))
+        if write and not merged.empty:
+            mesures.mkdir(parents=True, exist_ok=True)
+            path = mesures / f"{code}.parquet"
+            merged.to_parquet(path, compression="zstd", index=False)
+            logger.info("      %s : %.2f Mo", path.name, path.stat().st_size / 1e6)
+        resolutions.append(_resolution(merged))
+        del merged
+
+    tables["couverture"] = _fill_resolution(tables["couverture"], resolutions)
+
+    strays = schema.unknown_codes(unknown)
+    if strays:
+        logger.warning("  codes absents de ref_codes.csv, la nomenclature a bougé : %s",
+                       strays)
+
+    if write:
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, frame in tables.items():
+            _write_csv(frame, folder, name)
+    return tables
+
+
+def _fill_resolution(couverture: pd.DataFrame,
+                     resolutions: Sequence[pd.DataFrame]) -> pd.DataFrame:
+    """Put the measured columns next to the ones the inventory already filled.
+
+    An outer join, because the two sources need not agree exactly: the coverage
+    map carries the status of each daily maximum, the series carries the status
+    of each point, and a year may hold a status the daily maximum never shows.
+    Losing such a row would hide real data.
+    """
+    measured = [frame for frame in resolutions if not frame.empty]
+    if not measured:
+        return couverture
+    measured = pd.concat(measured, ignore_index=True)
+    keys = ["code_station", "annee", "statut"]
+    merged = couverture.drop(columns=["nb_points", "intervalle_median_min",
+                                      "intervalle_p90_min"]).merge(
+        measured, on=keys, how="outer", suffixes=("_carte", ""))
+    # The map labels a day by the status of its daily maximum, so a day holding
+    # both raw and validated points is only counted once, under one of them.
+    # Once the series is here the true count is known, and it replaces the
+    # estimate; the estimate stays for whatever was not downloaded.
+    merged["jours_avec_donnees"] = (merged["jours_avec_donnees"]
+                                    .fillna(merged["jours_avec_donnees_carte"])
+                                    .astype("Int64"))
+    merged["nb_points"] = merged["nb_points"].astype("Int64")
+    return merged[schema.columns("couverture")].sort_values(keys).reset_index(drop=True)
+
+
+def read(folder: str | Path = DEFAULT_FOLDER) -> pd.DataFrame:
+    """The fact table, every station at once."""
+    mesures = Path(folder) / "mesures"
+    if not mesures.exists():
+        raise FileNotFoundError(
+            f"Aucune mesure dans {mesures}. Lancez d'abord le téléchargement.")
+    return pd.read_parquet(mesures)

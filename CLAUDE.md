@@ -250,6 +250,15 @@ V031661301      0    aucun debit instantane
 couverture.csv : 240 lignes, statuts {4: 14, 8: 8, 12: 29, 16: 189}
 ```
 
+Et après téléchargement des deux passes sur ces mêmes dix stations, environ
+25 minutes et 1,6 Go de mémoire au pic :
+
+```
+8 fichiers parquet, 8 447 816 lignes, 47 Mo, environ 5,5 octets par ligne
+V720001002 : 2 825 465 lignes dont 111 286 pour la seule annee 2024
+couverture.csv : 343 lignes, statuts {4: 113, 8: 10, 12: 29, 16: 191}
+```
+
 **Un écart n'est jamais anodin.** C'est cette table qui a révélé que `step`
 changeait de sens d'une famille de grandeurs à l'autre : le code rendait 728
 jours au lieu de 16 684 sans lever la moindre erreur. Un écart signale soit une

@@ -15,7 +15,7 @@ import logging
 import sys
 from pathlib import Path
 
-from hydroportail import inventory, summary
+from hydroportail import download, inventory, summary
 from hydroportail.api import APIError
 
 EXEMPLES = """\
@@ -25,6 +25,12 @@ exemples :
 
   # la meme chose depuis un fichier, un code par ligne
   python download_hydroportail.py --inventaire --fichier stations_rmc.txt
+
+  # telecharger les chroniques, les deux passes
+  python download_hydroportail.py --stations V720001002
+
+  # la chronique arbitree par le producteur seule, dix fois plus legere
+  python download_hydroportail.py --fichier stations_rmc.txt --statuts most_valid
 """
 
 
@@ -55,6 +61,11 @@ def build_parser() -> argparse.ArgumentParser:
     groupe.add_argument("--inventaire", action="store_true",
                         help="afficher et écrire ce qui existe, sans télécharger "
                              "de chronique (une requête rapide par station)")
+    groupe.add_argument("--statuts", default="les-deux",
+                        choices=["les-deux", "raw", "most_valid"],
+                        help="quelles passes télécharger (défaut : les-deux). "
+                             "most_valid est la chronique arbitrée par le "
+                             "producteur, raw le signal brut non corrigé")
     groupe.add_argument("--silencieux", action="store_true",
                         help="n'afficher que les erreurs")
     return parser
@@ -74,11 +85,14 @@ def main(argv: list[str] | None = None) -> int:
         codes += lire_codes(args.fichier)
     if not codes:
         parser.error("indiquez des stations avec --stations ou --fichier")
-    if not args.inventaire:
-        parser.error("seul --inventaire est disponible à ce stade")
+    passes = {"les-deux": ("raw", "most_valid"),
+              "raw": ("raw",), "most_valid": ("most_valid",)}[args.statuts]
 
     try:
-        inventory(folder=args.dossier, codes=codes)
+        if args.inventaire:
+            inventory(folder=args.dossier, codes=codes)
+        else:
+            download(folder=args.dossier, codes=codes, statuts=passes)
         if not args.silencieux:
             summary(args.dossier)
         return 0
