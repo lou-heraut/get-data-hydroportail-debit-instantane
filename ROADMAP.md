@@ -1,8 +1,10 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : **il ne reste que le README**. Les phases 1 à 5 et
-7 sont faites et vérifiées ; le jeu de test complet est téléchargé, 8 447 816
-lignes et 47 Mo, et les cinq contrôles passent.
+État au 21 septembre 2026 : **les sept phases sont faites et vérifiées**. Le
+jeu de test complet est téléchargé, 8 447 816 lignes et 47 Mo, les cinq
+contrôles passent, le datapackage est valide et les exemples de relecture
+tournent en Python comme en R. Il reste à décider si cela vaut une v1.0.0, ce
+qui déclencherait la rotation décrite dans [CLAUDE.md](CLAUDE.md).
 
 Les faits sont dans [SOURCE.md](SOURCE.md), les choix dans
 [DESIGN.md](DESIGN.md). Ce fichier ne garde que l'avenir : ce qui est fait en
@@ -20,7 +22,7 @@ phase 2   couche API isolee            FAIT   politesse, fenetrage, falaise 500,
 phase 3   referentiel et couverture    FAIT   stations.csv, couverture.csv, ref_codes.csv
 phase 4   telechargement, 2 passes     FAIT   la table de faits
 phase 5   datapackage et empreintes    FAIT   datapackage.json
-phase 6   README, relecture Python et R       comment s'en servir
+phase 6   README, relecture Python et R  FAIT   comment s'en servir
 phase 7   controles                    FAIT   croise Hub'Eau, inclusion des statuts
 ---- livraison v1 ----
 phase 8   outil de reechantillonnage          voir ci-dessous
@@ -163,6 +165,21 @@ absence.**
 Le fichier `chantier.md` est éclaté par objectif, et ce qui n'était pas tranché
 devient une liste explicite d'arbitrages plutôt qu'une ambiguïté noyée dans la
 prose.
+
+### 21 septembre 2026, phase 6
+
+Le README. Il dit comment se servir de l'outil et des données ;
+[DESIGN.md](DESIGN.md) garde le pourquoi, et les deux se renvoient l'un à
+l'autre plutôt que de se recopier.
+
+Deux erreurs attrapées en vérifiant que les exemples tournent vraiment, ce qui
+est la raison d'être de cette vérification. L'exemple censé montrer qu'une
+chronique instantanée commence bien après l'ouverture de la station prenait
+Tarascon, où les deux dates coïncident au jour près ; il prend désormais
+Moûtiers, ouverte en 1903 pour un instantané commençant en 1981. Et l'exemple R
+utilisait `read_parquet`, qui ne sait pas lire un dossier : c'est `open_dataset`
+qu'il faut, lequel a l'avantage de ne rien charger tant qu'on ne collecte pas,
+et de ne lire que le fichier concerné quand on filtre sur une station.
 
 ### 21 septembre 2026, phases 5 et 7
 
