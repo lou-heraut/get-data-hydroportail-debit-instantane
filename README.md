@@ -15,6 +15,7 @@ précisément ce que le pas journalier efface.
 - [Installation](#installation)
 - [Télécharger](#télécharger)
 - [À quoi ressemblent les données](#à-quoi-ressemblent-les-données)
+- [Deux façons de lire](#deux-façons-de-lire-selon-ce-quon-a-sous-la-main)
 - [Relire les données en Python](#relire-les-données-en-python)
 - [Relire les données en R](#relire-les-données-en-r)
 - [Ce qu'il faut savoir avant d'analyser](#ce-quil-faut-savoir-avant-danalyser)
@@ -197,11 +198,37 @@ q,20,Bonne,
 m,10,EXP,"Expertisée, issue du jugement d'un hydromètre"
 ```
 
+## Deux façons de lire, selon ce qu'on a sous la main
+
+`mesures/` est un dossier de fichiers parquet, un par station. Cela se lit de
+deux manières, et il est utile de savoir laquelle on veut :
+
+| ce qu'on a | ce qu'on lit | avec quoi |
+|---|---|---|
+| **un fichier** | une station | la fonction de lecture habituelle |
+| **le dossier** | toutes les stations, comme une seule table | la notion de *dataset* d'Arrow |
+
+Un fichier isolé se lit et se transmet seul, sans rien savoir du reste : on peut
+en envoyer un par courriel. Le dossier, lui, forme un **dataset** au sens
+d'Apache Arrow, c'est à dire un jeu logique composé de plusieurs fichiers qui
+partagent le même schéma. Ce n'est pas un bricolage, c'est une notion de la
+bibliothèque, disponible en Python comme en R.
+
+L'intérêt n'est pas seulement de tout ouvrir d'un coup. Le format parquet range
+dans chaque fichier le minimum et le maximum de chaque colonne ; comme
+`code_station` y est constante, filtrer sur elle permet à Arrow d'écarter les
+autres fichiers sans les ouvrir. Un filtre sur une station coûte donc
+exactement le prix de son fichier.
+
 ## Relire les données en Python
 
 ```python
 import pandas as pd
 
+# une station : un fichier, qui se lit seul
+serie = pd.read_parquet("donnees_hydroportail/mesures/W011001001.parquet")
+
+# toutes les stations : le dossier s'ouvre comme une table unique
 mesures = pd.read_parquet("donnees_hydroportail/mesures/")
 ```
 
@@ -225,35 +252,48 @@ brut = mesures[mesures.statut == 4]
 sur = mesures[mesures.qualification != 12]
 
 # une station, une annee
-serie = mesures[(mesures.code_station == "W011001001")
-                & (mesures.date_obs.dt.year == 2024)]
+extrait = mesures[(mesures.code_station == "W011001001")
+                  & (mesures.date_obs.dt.year == 2024)]
+```
+
+Pour ne pas tout charger en mémoire, `pyarrow.dataset` donne la lecture
+paresseuse, qui n'ouvre que les fichiers nécessaires :
+
+```python
+import pyarrow.dataset as ds
+import pyarrow.compute as pc
+
+jeu = ds.dataset("donnees_hydroportail/mesures/", format="parquet")
+serie = jeu.to_table(filter=pc.field("code_station") == "W011001001").to_pandas()
 ```
 
 ## Relire les données en R
 
-`open_dataset` ouvre le dossier entier sans le charger en mémoire, ce que
-`read_parquet` ne sait pas faire sur un dossier :
+**`read_parquet` lit un fichier, `open_dataset` lit un dossier.** C'est la seule
+subtilité, et elle vaut d'être connue : appeler `read_parquet` sur le dossier
+échoue.
 
 ```r
 library(arrow)
 library(dplyr)
 
+# une station : un fichier
+serie <- read_parquet("donnees_hydroportail/mesures/W011001001.parquet")
+
+# toutes les stations : un dataset, qui ne charge rien tant qu'on ne collecte pas
 mesures <- open_dataset("donnees_hydroportail/mesures/")
-nrow(mesures)                       # 8 447 816, sans rien charger
+nrow(mesures)
 
 # la chronique propre, arbitree par le producteur
 chronique <- mesures |> filter(most_valid) |> collect()
 
 # une seule station : seul son fichier est lu
-serie <- mesures |> filter(code_station == "W011001001") |> collect()
+extrait <- mesures |> filter(code_station == "W011001001") |> collect()
 
 # les codes de station gardent leurs lettres et leurs zeros
 couverture <- read.csv("donnees_hydroportail/couverture.csv",
                        colClasses = c(code_station = "character"))
 ```
-
-Le filtre sur `code_station` ne lit que le fichier concerné, puisque le jeu est
-découpé par station.
 
 ## Ce qu'il faut savoir avant d'analyser
 
