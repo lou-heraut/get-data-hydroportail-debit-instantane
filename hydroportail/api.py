@@ -233,8 +233,16 @@ def _request(code: str, variable: str, family: str, status: str,
 #  request that is known to fail.
 # --------------------------------------------------------------------------
 
-def _cache_file(cache: Path, code: str, status: str, start: date, end: date) -> Path:
-    return cache / code / f"{start:%Y%m%d}_{end:%Y%m%d}_{status}.json.gz"
+def _cache_file(cache: Path, code: str, status: str, start: date, end: date,
+                variable: str = "Q") -> Path:
+    """One file per window actually fetched.
+
+    The variable belongs in the name: without it a Q request and a QIXnJ
+    request over the same window and status would overwrite each other. It does
+    not happen today because the coverage map uses a window of its own, but
+    relying on that would be a trap for whoever adds a variable.
+    """
+    return cache / code / f"{start:%Y%m%d}_{end:%Y%m%d}_{variable}_{status}.json.gz"
 
 
 def _cache_read(path: Path) -> Any | None:
@@ -262,7 +270,7 @@ def _fetch_window(cache: Path, code: str, status: str, start: date, end: date,
     window had to be split and into which halves. Replaying a run therefore
     costs no request at all, not even the one that is known to fail.
     """
-    path = _cache_file(cache, code, status, start, end)
+    path = _cache_file(cache, code, status, start, end, variable)
     cached = _cache_read(path)
     if isinstance(cached, list):
         return cached

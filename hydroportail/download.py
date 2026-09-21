@@ -210,6 +210,16 @@ def _couverture_table(codes, maps) -> pd.DataFrame:
 # --------------------------------------------------------------------------
 
 def _write_csv(frame: pd.DataFrame, folder: Path, table: str) -> Path:
+    """Write a table, with the types the datapackage announces.
+
+    A missing value turns a pandas integer column into a float, which writes
+    `3.0` where the schema promises an integer and makes the package invalid.
+    The nullable integer type says the same thing without the decimal point.
+    """
+    frame = frame.copy()
+    for field in schema.FIELDS[table]:
+        if field["type"] == "integer" and field["name"] in frame.columns:
+            frame[field["name"]] = frame[field["name"]].astype("Int64")
     path = folder / f"{table}.csv"
     frame.to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
     return path
@@ -423,7 +433,30 @@ def download(
         folder.mkdir(parents=True, exist_ok=True)
         for name, frame in tables.items():
             _write_csv(frame, folder, name)
+        path = _write_datapackage(folder, tables, statuts)
+        logger.info("  écrit %s", path.name)
     return tables
+
+
+def _write_datapackage(folder: Path, tables: dict[str, pd.DataFrame],
+                       statuts: Sequence[str]) -> Path:
+    stations = tables["stations"]
+    couverture = tables["couverture"]
+    carrying = stations[stations["porte_debit"].astype(bool)]
+    debut = carrying["date_debut_instantane"].min() if len(carrying) else None
+    fin = carrying["date_fin_instantane"].max() if len(carrying) else None
+    coverage = {
+        "stations_demandees": int(len(stations)),
+        "stations_avec_debit": int(len(carrying)),
+        "date_debut": debut,
+        "date_fin": fin,
+        "nb_points": int(couverture["nb_points"].sum(skipna=True) or 0),
+        "statuts_rencontres": sorted(int(s) for s in couverture["statut"].unique()),
+    }
+    content = schema.build_datapackage(
+        folder, {name: len(frame) for name, frame in tables.items()},
+        coverage, statuts)
+    return schema.write_datapackage(folder, content)
 
 
 def _fill_resolution(couverture: pd.DataFrame,

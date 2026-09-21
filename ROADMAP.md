@@ -1,8 +1,8 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : **les phases 1 à 4 sont faites**, chacune vérifiée
-contre les mesures de [SOURCE.md](SOURCE.md). Le jeu de test complet est
-téléchargé : 8 447 816 lignes, 47 Mo, en 25 minutes.
+État au 21 septembre 2026 : **il ne reste que le README**. Les phases 1 à 5 et
+7 sont faites et vérifiées ; le jeu de test complet est téléchargé, 8 447 816
+lignes et 47 Mo, et les cinq contrôles passent.
 
 Les faits sont dans [SOURCE.md](SOURCE.md), les choix dans
 [DESIGN.md](DESIGN.md). Ce fichier ne garde que l'avenir : ce qui est fait en
@@ -19,9 +19,9 @@ phase 1   squelette du depot           FAIT   pyproject, LICENSE, CITATION, venv
 phase 2   couche API isolee            FAIT   politesse, fenetrage, falaise 500, cache
 phase 3   referentiel et couverture    FAIT   stations.csv, couverture.csv, ref_codes.csv
 phase 4   telechargement, 2 passes     FAIT   la table de faits
-phase 5   datapackage et empreintes           datapackage.json
-phase 6   README, relecture Python et R       DESIGN.md y est replie
-phase 7   controles                           croise Hub'Eau, inclusion des statuts
+phase 5   datapackage et empreintes    FAIT   datapackage.json
+phase 6   README, relecture Python et R       comment s'en servir
+phase 7   controles                    FAIT   croise Hub'Eau, inclusion des statuts
 ---- livraison v1 ----
 phase 8   outil de reechantillonnage          voir ci-dessous
 ```
@@ -163,6 +163,32 @@ absence.**
 Le fichier `chantier.md` est éclaté par objectif, et ce qui n'était pas tranché
 devient une liste explicite d'arbitrages plutôt qu'une ambiguïté noyée dans la
 prose.
+
+### 21 septembre 2026, phases 5 et 7
+
+Le datapackage et les contrôles. Le premier est validé par `frictionless` et
+porte une empreinte SHA-256 par station, granularité voulue : au passage
+suivant, une station dont l'empreinte a bougé est une station dont le passé a
+été réécrit, ce qu'une révision de courbe de tarage fait et qu'aucune logique
+fondée sur les dates n'attraperait.
+
+Les cinq contrôles passent. Le plus important est la non-perte : les 8 447 816
+points servis se retrouvent tous dans `mesures/`, aucun perdu ni inventé, et la
+vérification relit les réponses brutes sans repasser par le code de fusion,
+puisque l'intérêt est justement de ne pas refaire confiance à ce qu'on vérifie.
+
+Le recoupement avec Hub'Eau donne un écart maximal de 0,000000 m3/s sur 8 335
+horodatages communs, ce qui confirme sur des données réelles ce qu'un sondage
+avait établi. Et l'inclusion de `pre_validated_and_validated` dans `most_valid`
+tient sur les trois stations testées, dont 14 137 points à Moûtiers, ce qui
+valide a posteriori le choix de ne télécharger que deux passes.
+
+Deux défauts corrigés au passage. Le nom des fichiers de cache ne portait pas la
+grandeur, si bien qu'une requête `Q` et une requête `QIXnJ` sur la même fenêtre
+et le même statut se seraient écrasées ; cela n'arrivait pas en pratique, les
+fenêtres différant, mais c'était faux par principe. Et une valeur manquante
+transformait une colonne entière en flottant, écrivant `3.0` là où le schéma
+annonce un entier, ce qui rendait le datapackage invalide.
 
 ### 21 septembre 2026, phase 4
 

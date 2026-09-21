@@ -17,10 +17,11 @@ quoi que ce soit :
 le fait sans le recopier. Si tu ajoutes quelque chose, respecte ce partage
 plutôt que de tout redire au même endroit.
 
-`DESIGN.md` est **provisoire** : sa matière est celle des sections « Choix
-techniques » et « Ce qu'il faut savoir avant d'analyser » du README des dépôts
-voisins, écrite avant le logiciel. En phase 6 elle y est repliée et le fichier
-disparaît, ce qui ramène le dépôt à la structure de la famille.
+**Le README et `DESIGN.md` ne disent pas la même chose** et ne se remplacent
+pas : le README dit comment se servir de l'outil et de ses données, `DESIGN.md`
+dit pourquoi ils sont faits ainsi. Quand une règle est énoncée dans le README,
+sa justification reste dans `DESIGN.md` et sa mesure dans `SOURCE.md`, avec un
+lien plutôt qu'une redite.
 
 Chaque affirmation chiffrée de ces fichiers est une **mesure** faite sur le
 service réel, pas une estimation ni une lecture de documentation. Ne pas en
@@ -257,6 +258,21 @@ Et après téléchargement des deux passes sur ces mêmes dix stations, environ
 8 fichiers parquet, 8 447 816 lignes, 47 Mo, environ 5,5 octets par ligne
 V720001002 : 2 825 465 lignes dont 111 286 pour la seule annee 2024
 couverture.csv : 343 lignes, statuts {4: 113, 8: 10, 12: 29, 16: 191}
+```
+
+Puis les contrôles, qui doivent tous passer :
+
+```bash
+python verifier_hydroportail.py
+python -c "from frictionless import Package; print(Package('donnees_hydroportail/datapackage.json').validate().valid)"
+```
+
+```
+non-perte          8 447 816 points servis, tous presents
+recoupement        ecart maximal 0,000000 m3/s avec Hub'Eau
+inclusion          pre_validated_and_validated contenue dans most_valid
+codes              tous decrits par ref_codes.csv
+integrite          aucune ligne de couverture orpheline
 ```
 
 **Un écart n'est jamais anodin.** C'est cette table qui a révélé que `step`

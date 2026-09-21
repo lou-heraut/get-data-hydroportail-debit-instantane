@@ -9,7 +9,7 @@ re-exported by ``hydroportail/__init__.py``. Moving it implies moving it in
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Sequence
 
 SCRIPT_VERSION = "0.1.0"
 
@@ -240,3 +240,150 @@ TABLES = ("stations", "couverture", "ref_codes")
 
 def columns(table: str) -> list[str]:
     return [field["name"] for field in FIELDS[table]]
+
+
+# --------------------------------------------------------------------------
+#  datapackage.json
+# --------------------------------------------------------------------------
+
+import hashlib
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+SOURCE_AJAX = "https://hydro.eaufrance.fr/stationhydro/ajax/{code}/series"
+HUBEAU_DOC = "https://hubeau.eaufrance.fr/page/api-hydrometrie"
+SANDRE_NSA = "https://api.sandre.eaufrance.fr/referentiels/v1/nsa.json"
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _resource(folder: Path, table: str, rows: int) -> dict[str, Any]:
+    path = folder / f"{table}.csv"
+    resource = {
+        "name": table,
+        "path": f"{table}.csv",
+        "format": "csv",
+        "mediatype": "text/csv",
+        "encoding": "utf-8",
+        "bytes": path.stat().st_size,
+        "hash": f"sha256:{sha256(path)}",
+        "x_nb_lignes": rows,
+        "dialect": {"delimiter": ",", "quoteChar": '"', "header": True,
+                    "lineTerminator": "\n"},
+        "schema": {
+            "fields": FIELDS[table],
+            "primaryKey": PRIMARY_KEYS[table],
+            "missingValues": [""],
+        },
+    }
+    if table == "couverture":
+        resource["schema"]["foreignKeys"] = [{
+            "fields": "code_station",
+            "reference": {"resource": "stations", "fields": "code_station"},
+        }]
+    return resource
+
+
+def _mesures_resources(folder: Path) -> list[dict[str, Any]]:
+    """One entry per station, so that its fingerprint is its own.
+
+    That granularity is the point: at the next pass, a station whose hash
+    moved is a station whose past was rewritten, which is exactly what a
+    revised rating curve does and what no date based logic would catch.
+    """
+    mesures = folder / "mesures"
+    if not mesures.exists():
+        return []
+    entries = []
+    for path in sorted(mesures.glob("*.parquet")):
+        entries.append({
+            "name": f"mesures/{path.stem}",
+            "path": f"mesures/{path.name}",
+            "format": "parquet",
+            "mediatype": "application/vnd.apache.parquet",
+            "bytes": path.stat().st_size,
+            "hash": f"sha256:{sha256(path)}",
+            "x_code_station": path.stem,
+        })
+    return entries
+
+
+def build_datapackage(folder: Path, row_counts: dict[str, int],
+                      coverage: dict[str, Any],
+                      statuses: Sequence[str]) -> dict[str, Any]:
+    """Machine readable metadata for the dataset (Frictionless v2).
+
+    The parquet files are described outside "resources": a Frictionless
+    validator cannot check a binary resource and would wrongly report the
+    package invalid. They stay fully documented here, with their fingerprints.
+    """
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return {
+        "$schema": "https://datapackage.org/profiles/2.0/datapackage.json",
+        "name": "hydroportail-debit-instantane",
+        "title": "Débit instantané des cours d'eau français, depuis HydroPortail",
+        "description": (
+            "Chroniques de debit instantane telles qu'HydroPortail les diffuse, "
+            "a leur pas natif, avec les quatre codes de qualite du Sandre "
+            "conservés par point. Une ligne par point publie : un horodatage "
+            "publie a deux niveaux de validation donne deux lignes, ce qui est "
+            "la stricte verite de ce que la source diffuse. Aucun filtrage de "
+            "qualite n'est applique."
+        ),
+        "version": SCRIPT_VERSION,
+        "created": now,
+        "keywords": ["debit", "hydrometrie", "instantane", "eclusee",
+                     "cours d'eau", "France", "HydroPortail", "Sandre"],
+        "licenses": [LICENSE],
+        "sources": [
+            {"title": "HydroPortail", "path": SOURCE_URL},
+            {"title": "API Hub'Eau hydrométrie, référentiel des stations",
+             "path": HUBEAU_DOC},
+            {"title": "Nomenclatures Sandre 510, 515, 512 et 923", "path": SANDRE_NSA},
+        ],
+        "resources": [_resource(folder, table, row_counts.get(table, 0))
+                      for table in TABLES if (folder / f"{table}.csv").exists()],
+        "x_ressources_derivees": _mesures_resources(folder),
+        "x_provenance": {
+            "route": SOURCE_AJAX,
+            "telecharge_le": now,
+            "script": f"hydroportail v{SCRIPT_VERSION}",
+            "passes": list(statuses),
+            "note": (
+                "Les valeurs sont reprises telles que servies, a deux "
+                "transformations pres : la conversion des litres par seconde en "
+                "m3/s, et le dedoublonnage de l'union des passes sur la ligne "
+                "entiere. La colonne most_valid dit quelle passe a rendu le "
+                "point ; elle ne se deduit pas du statut, puisque sur les "
+                "periodes recentes la passe most_valid rend le point brut "
+                "lui-meme. La table ref_codes.csv et les colonnes de resolution "
+                "de couverture.csv sont ajoutees par ce script."
+            ),
+            "avertissements": [
+                "Melanger les statuts par periode a un sens, c'est ce que fait "
+                "le producteur ; les melanger par horodatage n'en a pas.",
+                "La serie validee est une courbe a points de rupture, pas un "
+                "echantillonnage : la lire sans interpoler sous-echantillonne "
+                "sans le dire.",
+                "qualification = 12 signifie « douteuse » et n'est pas rare : "
+                "c'est le seul drapeau de qualite porte par chaque point.",
+                "La resolution se decide station par station et annee par "
+                "annee, d'ou couverture.csv.",
+            ],
+        },
+        "x_couverture": coverage,
+    }
+
+
+def write_datapackage(folder: Path, content: dict[str, Any]) -> Path:
+    path = folder / "datapackage.json"
+    path.write_text(json.dumps(content, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8")
+    return path

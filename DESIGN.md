@@ -4,10 +4,10 @@ Les choix de conception et leurs raisons. Les faits qui les fondent sont dans
 [SOURCE.md](SOURCE.md) et ne sont pas recopiés ici : ce fichier y renvoie. Ce
 qui n'est pas encore tranché est dans [ROADMAP.md](ROADMAP.md).
 
-Tout ce qui suit est tranché. Ce fichier sera replié dans le `README.md` en
-phase 6, quand le code existera : sa matière est celle des sections « Choix
-techniques » et « Ce qu'il faut savoir avant d'analyser » des dépôts voisins,
-écrite avant le logiciel plutôt qu'après.
+Tout ce qui suit est tranché. Ce fichier répond à « pourquoi ainsi » ; le
+[README](README.md) répond à « comment s'en servir ». Une règle énoncée
+là-bas a sa justification ici et sa mesure dans [SOURCE.md](SOURCE.md), reliées
+plutôt que recopiées.
 
 ## La demande, et le périmètre de la v1
 
