@@ -4,8 +4,10 @@ Les choix de conception et leurs raisons. Les faits qui les fondent sont dans
 [SOURCE.md](SOURCE.md) et ne sont pas recopiés ici : ce fichier y renvoie. Ce
 qui n'est pas encore tranché est dans [ROADMAP.md](ROADMAP.md).
 
-Les sections marquées **en arbitrage** décrivent l'état actuel du plan, pas une
-décision acquise.
+Tout ce qui suit est tranché. Ce fichier sera replié dans le `README.md` en
+phase 6, quand le code existera : sa matière est celle des sections « Choix
+techniques » et « Ce qu'il faut savoir avant d'analyser » des dépôts voisins,
+écrite avant le logiciel plutôt qu'après.
 
 ## La demande, et le périmètre de la v1
 
@@ -19,11 +21,18 @@ v1 rapatrie la donnée telle que HydroPortail la diffuse, à son pas natif, pour
 la rendre réutilisable dans l'unité. Le rééchantillonnage à pas régulier est
 une seconde étape, parce que la question est statistique avant d'être technique.
 
-Deux limites à annoncer à la demandeuse, établies par la mesure et non
-négociables par le logiciel : la résolution d'une heure ou moins **n'est pas
-tenue avant 2013 environ** sur la plupart des stations, et la notion de « toute
-la durée des chroniques » ne recouvre pas le même objet selon le statut, le brut
-étant beaucoup moins profond que le validé.
+**On prend tout, et la variabilité n'est pas un défaut.** Que la quantité et la
+qualité varient dans le temps et d'une station à l'autre est le principe même
+de la donnée hydrométrique, pas une anomalie de cette source ni une limite à
+excuser. La résolution n'est pas la même avant 2013 qu'après, le brut n'est pas
+aussi profond que le validé, et une station peut être trouée : ce sont des
+caractéristiques, elles se documentent.
+
+Le rôle du logiciel s'arrête là. **Il livre toute l'information qui permet de
+décider, et ne décide jamais à la place du chercheur** : c'est l'expertise
+croisée au besoin qui tranche ce qui est utilisable, et elle ne peut le faire
+que si elle voit ce qu'elle manipule. D'où la table de couverture, les quatre
+codes de qualité conservés par point, et l'absence de tout filtrage par défaut.
 
 ## Deux passes de téléchargement, `raw` et `most_valid`
 
@@ -69,6 +78,21 @@ stations, puisque le brut ne remonte qu'à 2013 ou 2014.
 
 C'est la table de couverture qui permet de choisir avant de lancer, et c'est une
 des raisons pour lesquelles elle est le premier livrable.
+
+## Ce que la v1 livre
+
+```
+donnees_hydroportail/
+├── stations.csv       csv       une ligne par code demande, identite et bornes
+├── couverture.csv     csv       station x annee x statut, de quoi decider
+├── ref_codes.csv      csv       vocabulaire de s, q, m, c, engendre depuis Sandre
+├── mesures/           parquet   la table de faits, un fichier par station
+├── datapackage.json   json      schema, provenance, empreintes sha256
+└── .sources/          json.gz   cache des reponses recues, ignore par git
+```
+
+**Une seule table de faits**, et trois tables de référence qui disent comment la
+lire. Tout le reste s'en déduit.
 
 ## La table de faits
 
@@ -151,19 +175,41 @@ station, ce qui rendra directement mesurable au passage suivant quelles stations
 ont bougé. Le découpage par fenêtre de téléchargement ne remonte pas jusqu'au
 disque : il vit dans `.sources/`.
 
-## La chronique propre **en arbitrage**
+## Une seule table, pas deux
 
 Le plan initial prévoyait un second dossier `chronique/`, la passe `most_valid`
-seule, une ligne par horodatage, pour le confort de relecture.
+seule, une ligne par horodatage, pour le confort de relecture. **Il est
+abandonné.**
 
-**L'objection est qu'il s'agit d'une vue, pas d'une table** : par construction
-`chronique/` vaut exactement `mesures[most_valid]`, ce qui double le disque et
-crée une surface d'incohérence pour une information déjà présente. L'analogie
-avec `onde_full.parquet` du dépôt voisin ne tient pas : celui-ci est une
-**jointure** de quatre tables et épargne un vrai travail, alors qu'ici il
-s'agirait d'un **filtre** sur une colonne d'une seule table.
+Par construction `chronique/` vaut exactement `mesures[most_valid]` : c'est une
+vue, pas une table. La stocker doublerait le disque et créerait une surface
+d'incohérence pour une information déjà présente. L'analogie avec
+`onde_full.parquet` du dépôt voisin ne tenait pas : celui-ci est une
+**jointure** de quatre tables et épargne un vrai travail, alors qu'ici il se
+serait agi d'un **filtre** sur une colonne d'une seule table.
 
-Arbitrage en attente, voir [ROADMAP.md](ROADMAP.md).
+**La contrepartie est à la charge du README**, et elle n'est pas négociable : si
+la chronique propre n'est plus un fichier, il faut qu'elle soit évidente à
+obtenir. Le README doit donner, dès sa section de relecture et avant toute
+considération savante, les deux lignes qui la produisent :
+
+```python
+import pandas as pd
+mesures = pd.read_parquet("donnees_hydroportail/mesures/")
+chronique = mesures[mesures.most_valid]
+```
+
+```r
+library(arrow)
+mesures <- read_parquet("donnees_hydroportail/mesures/")
+chronique <- mesures[mesures$most_valid, ]
+```
+
+et dire en une phrase ce que cette chronique est : la donnée arbitrée par le
+producteur, homogène par blocs, qui convient à la plupart des usages
+hydrologiques. Le reste de `mesures/` sert à ceux qui ont besoin de descendre
+au brut, et le README doit dire comment savoir si on en a besoin, en renvoyant
+à la table de couverture.
 
 ## Le référentiel
 
@@ -178,19 +224,50 @@ Une ligne par code demandé, y compris ceux qui ne portent aucun débit :
 - les bornes réelles de l'instantané et le taux de couverture, obtenus par la
   carte `QIXnJ` sans rien télécharger de lourd.
 
-### `couverture.csv` **en arbitrage**
+### `couverture.csv`
 
 Le plan initial mettait un `intervalle_median_min` unique par station dans
 `stations.csv`. La mesure montre que la résolution varie d'un facteur 20 au
 cours de la vie d'une station, et pas monotonement : un chiffre unique dit donc
 le contraire de la vérité sur les deux bouts de la chronique.
 
-La proposition est une table séparée, station x année, portant les jours
-présents, le pas médian et le mélange de statuts. C'est elle qui répond à la
-seule question qui compte pour le sujet éclusées : **cette station, cette
-année là, décrit-elle une éclusée ?**
+C'est donc une table à part, **une ligne par station, année et statut**,
+calculée depuis la table de faits après téléchargement :
 
-Arbitrage en attente sur la granularité, voir [ROADMAP.md](ROADMAP.md).
+| colonne | ce qu'elle dit |
+|---|---|
+| `code_station` | |
+| `annee` | |
+| `statut` | le code `s`, parce que brut et validé n'ont pas la même densité |
+| `nb_points` | le volume |
+| `jours_avec_donnees` | les trous, qu'un pas médian ne montre jamais |
+| `intervalle_median_min` | la résolution courante |
+| `intervalle_p90_min` | la résolution dans le pire décile, donc l'irrégularité |
+
+Sept colonnes, et chacune répond à une question qu'un analyste se pose avant de
+lancer un calcul. Elle reste petite : environ 7 000 lignes pour 68 stations sur
+toute leur vie.
+
+**Pourquoi ces trois indicateurs et pas un seul.** Sur l'Isère à Moûtiers, la
+médiane seule raconte une histoire fausse à deux endroits : en 2015 elle
+remonte à 72 minutes alors que les années encadrantes sont à 15 et 12, et une
+médiane de 5 minutes sur une année à 200 jours de données ne dit pas que le
+tiers de l'année manque. Le couple médiane et p90 sépare une série régulière
+d'une série qui alterne rafales et silences, et `jours_avec_donnees` sépare une
+chronique dense d'une chronique trouée.
+
+C'est cette table qui répond à la seule question qui compte pour le sujet
+éclusées : **cette station, cette année là, décrit-elle une éclusée ?** Elle ne
+répond pas à sa place : elle lui donne de quoi trancher.
+
+### `--inventaire`, avant de télécharger
+
+La carte `QIXnJ` donne les bornes, les jours et le mélange de statuts pour une
+requête par station, sans rien télécharger de lourd. Comme chez les voisins,
+`--inventaire` l'affiche et s'arrête, ce qui permet de voir ce qu'une liste de
+codes contient réellement avant d'engager une campagne : combien de codes ne
+portent aucun débit, lesquels sont des codes de site, quelle profondeur chacun
+offre.
 
 ### `ref_codes.csv`
 
@@ -374,9 +451,9 @@ produit ou de paramètre se recopie, il ne se traduit pas, sous peine de rompre
 le lien avec la documentation d'origine.
 
 **Cette règle vaut aussi pour les options de la ligne de commande.** Le plan
-initial proposait `--statuts brut | most_valid | les-deux`, ce qui traduit `raw`
-et pas `most_valid` sur la même ligne. Arbitrage en attente, voir
-[ROADMAP.md](ROADMAP.md).
+initial proposait `--statuts brut | most_valid | les-deux`, ce qui traduisait
+`raw` et pas `most_valid` sur la même ligne. C'est `--statuts raw` qui est
+retenu, par simple application de la règle ci-dessus.
 
 ## La mise à jour incrémentale, écartée en v1
 

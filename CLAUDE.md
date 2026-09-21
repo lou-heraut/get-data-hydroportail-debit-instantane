@@ -9,25 +9,71 @@ toucher à quoi que ce soit :
 |---|---|---|
 | [SOURCE.md](SOURCE.md) | les faits mesurés sur HydroPortail, Hub'Eau et Sandre | qu'est-ce que la source fait réellement ? |
 | [DESIGN.md](DESIGN.md) | les choix de conception et leurs raisons | qu'est-ce qu'on construit, et pourquoi ainsi ? |
-| [ROADMAP.md](ROADMAP.md) | phases, arbitrages en attente, journal | qu'est-ce qui reste à faire et à trancher ? |
+| [ROADMAP.md](ROADMAP.md) | phases, questions ouvertes, journal | qu'est-ce qui reste à faire ? |
 
 **La règle de non-répétition est volontaire.** Un fait mesuré vit dans
 `SOURCE.md` et nulle part ailleurs ; une décision vit dans `DESIGN.md` et cite
 le fait sans le recopier. Si tu ajoutes quelque chose, respecte ce partage
-plutôt que de tout redire au même endroit. Le `README.md` viendra en phase 6 et
-s'adressera aux utilisateurs, pas aux développeurs.
+plutôt que de tout redire au même endroit.
+
+`DESIGN.md` est **provisoire** : sa matière est celle des sections « Choix
+techniques » et « Ce qu'il faut savoir avant d'analyser » du README des dépôts
+voisins, écrite avant le logiciel. En phase 6 elle y est repliée et le fichier
+disparaît, ce qui ramène le dépôt à la structure de la famille.
 
 Chaque affirmation chiffrée de ces fichiers est une **mesure** faite sur le
 service réel, pas une estimation ni une lecture de documentation. Ne pas en
 ajouter sans avoir vérifié, et ne pas en retirer sans avoir mesuré le contraire.
 
+## Cycle de vie des fichiers
+
+**La roadmap ne s'accumule jamais.** Un fichier qui ne fait que grossir est un
+journal, pas une feuille de route, et il redevient illisible comme l'était le
+`chantier.md` d'origine. Ce qui est fait en sort.
+
+La circulation est la suivante, et elle est la même à chaque version :
+
+```
+en cours de route
+  une mesure           ------->  SOURCE.md      et nulle part ailleurs
+  une decision prise    ------->  DESIGN.md      cite la mesure, ne la recopie pas
+  un revirement         ------->  ROADMAP.md     journal, tant qu'il est frais
+
+a la livraison d'une version
+  les phases faites     ------->  CHANGELOG.md   sous ## [x.y.z] - date
+  le raisonnement stable ------>  DESIGN.md      puis l'entree de journal disparait
+  ce qui reste          ------->  ROADMAP.md     qui ne garde que l'avenir
+```
+
+Concrètement, au moment de livrer :
+
+1. `CHANGELOG.md` reçoit une section `## [1.0.0] - 2026-xx-xx` qui dit ce que la
+   version contient, en prose. Format [Keep a Changelog](https://keepachangelog.com/fr/).
+2. Les phases livrées **disparaissent** de `ROADMAP.md`, qui rouvre une section
+   pour la suite. Il doit rétrécir à chaque version, pas grandir.
+3. Le journal est une **zone d'attente, pas une archive** : une entrée qui
+   explique pourquoi on a changé d'avis a sa place tant que c'est frais, mais
+   dès que la décision est stable son raisonnement appartient à `DESIGN.md` ou
+   au README, et l'entrée se supprime. Les messages de commit gardent la trace
+   fine, c'est leur rôle.
+4. `git tag v1.0.0`, et la version bouge au même moment dans `SCRIPT_VERSION`,
+   `pyproject.toml` et `CITATION.cff`.
+
+Ce qui distingue les quatre fichiers tient en une phrase : `SOURCE.md` est vrai
+indépendamment de nous, `DESIGN.md` est ce que nous avons décidé, `ROADMAP.md`
+est ce que nous n'avons pas encore fait, `CHANGELOG.md` est ce que nous avons
+livré. Si une information ne rentre dans aucun des quatre, c'est probablement
+qu'elle appartient au README ou à un commentaire dans le code.
+
 ## État
 
-**Aucun code au 21 septembre 2026.** Quatre arbitrages attendent une décision
-avant que la première ligne soit écrite, parce que chacun change la forme du
-produit livré : voir la section « Les arbitrages en attente » de
-[ROADMAP.md](ROADMAP.md). Ne pas les trancher à la place du responsable du
-projet.
+**Aucun code au 21 septembre 2026.** La source est instruite, les choix de
+conception sont tranchés, la v1 peut être construite. La liste de ce qui est
+arrêté et ne se rediscute pas est en fin de [ROADMAP.md](ROADMAP.md).
+
+Ce qui reste ouvert y est aussi, et n'est pas à trancher seul : la liste réelle
+des 68 stations, et les quatre questions scientifiques de l'outil de
+rééchantillonnage.
 
 ## Contexte
 
