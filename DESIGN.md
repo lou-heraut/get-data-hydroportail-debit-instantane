@@ -362,11 +362,12 @@ ici, et elles sont mesurées.
 1. **gzip systématique.** Facteur 55 sur la bande passante. Non négociable.
 2. **Une requête à la fois**, aucun parallélisme, jamais. C'est la règle qui
    protège réellement le service.
-3. **Temporisation adaptative**, au moins aussi longue que la requête
-   précédente a mis à répondre. Une réponse lourde ou un serveur qui peine nous
-   ralentissent alors automatiquement, ce qu'un délai fixe ne sait pas faire.
-   Le plancher n'est pas choisi au jugé mais **calibré par la mesure**, voir
-   ci-dessous.
+3. **Attendre exactement aussi longtemps que la requête précédente a mis à
+   répondre**, et rien de plus. Notre rapport cyclique reste alors à 50 % quoi
+   qu'il arrive : on ne prend jamais plus de la moitié du temps du serveur, que
+   nos requêtes soient légères ou lourdes, qu'il soit frais ou chargé. Il n'y a
+   **aucun chiffre arbitraire** dans cette règle, c'est le service qui fixe
+   notre rythme. Voir ci-dessous pour ce qui l'a établie.
 4. **Un peu d'aléatoire**, de l'ordre de 20 %, pour lisser la charge. La raison
    est le lissage, pas le camouflage : chercher à passer pour un humain serait
    de l'évasion, et c'est précisément ce qui ferait ressembler un usage légitime
@@ -377,34 +378,39 @@ ici, et elles sont mesurées.
    retélécharger ce qui est déjà là.
 7. **Campagnes longues hors heures ouvrées.**
 
-### Calibrer le rythme plutôt que le deviner
+### Pourquoi cette règle, et pas un délai de prudence
 
-Un plancher de deux secondes serait un chiffre arbitraire, ni prudent ni
-efficace, juste inventé. Le rythme de croisière est donc **mesuré en phase 2**,
-par une expérience courte et bornée dont le résultat part dans
-[SOURCE.md](SOURCE.md) comme n'importe quelle autre mesure.
+Le rythme a été calibré par la mesure plutôt que choisi au jugé. Le protocole
+cherchait **le point de fonctionnement sûr et non le point de rupture** : temps
+de réponse d'une requête témoin à cadence décroissante, arrêt au premier signe
+de fatigue. La falaise HTTP 500 a déjà été rencontrée une fois,
+involontairement, et on n'en cherche pas une seconde.
 
-**Le principe : on cherche le point de fonctionnement sûr, pas le point de
-rupture.** Il n'est pas nécessaire de faire plier un service pour savoir à
-quelle allure il est à l'aise. Le protocole mesure le temps de réponse d'une
-requête identique à cadence décroissante, et **s'arrête au premier signe de
-fatigue** plutôt que de continuer jusqu'à l'échec :
+**Le service n'a pas bronché**, de 11 à 39 requêtes par minute, chiffres dans
+[SOURCE.md](SOURCE.md). Il n'y a donc pas de seuil mesuré à respecter, et c'est
+précisément ce qui rend la règle adaptative préférable à une constante : quand
+on ne connaît pas la limite, la seule prudence solide est de s'indexer sur le
+comportement observé du service plutôt que d'inventer une marge.
+
+Ce que la mesure ne dit pas, et qu'il faut garder en tête : elle porte sur un
+client seul, sur des requêtes moyennes, pendant quatre minutes. Elle ne dit rien
+d'une charge soutenue pendant des heures, ni des requêtes bien plus lourdes de
+la campagne réelle, ni de ce que les autres usagers ressentent. La règle
+adaptative couvre ces angles morts sans qu'on ait eu à les mesurer : si quoi que
+ce soit se dégrade, nos délais s'allongent d'eux-mêmes.
+
+Durée de la campagne complète qui en découle, pour 68 stations :
 
 ```
-requete temoin identique, repetee, en faisant varier le delai entre requetes
-  delai genereux        -> temps de reponse de reference
-  on resserre par paliers
-  des que le temps de reponse s'ecarte de la reference     -> on s'arrete
-  rythme retenu = dernier palier sain, avec une marge confortable
+inventaire        68 requetes      ~5 min
+most_valid       ~200 requetes    ~15 min
+raw              ~816 requetes    ~2 h 15
+                                  -------
+                                  ~2 h 40
 ```
 
-La falaise HTTP 500 a déjà été rencontrée une fois, involontairement, et elle a
-suffi à nous apprendre ce qu'il fallait savoir. **On n'en cherche pas une
-seconde.**
-
-Cette calibration est aussi ce qui permet d'annoncer honnêtement la durée d'une
-campagne complète, de l'ordre de quelques heures pour 68 stations, plutôt que de
-la subir.
+Aller deux fois plus vite ferait gagner une heure sur une opération qu'on fera
+une fois. Ça ne vaut pas la marge perdue.
 
 ### Ce que le README doit dire à l'utilisateur
 

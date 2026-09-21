@@ -47,7 +47,7 @@ ses précautions (une requête à la fois, compression, temporisation adaptative
 fenêtres dimensionnées), mais elles ne valent que si l'usage suit :
 
 - **lancer les campagnes longues la nuit ou le week-end.** Une extraction
-  complète dure quelques heures ;
+  complète de 68 stations dure environ deux heures et demie ;
 - **ne jamais lancer plusieurs exécutions en parallèle** pour aller plus vite :
   cela annule d'un coup toutes les précautions du code ;
 - **commencer par `--inventaire`**, qui montre ce qui existe sans rien

@@ -21,13 +21,6 @@ phase 7   controles                           croise Hub'Eau, inclusion des stat
 phase 8   outil de reechantillonnage          voir ci-dessous
 ```
 
-**La phase 2 commence par la calibration du rythme**, une expérience courte
-décrite dans [DESIGN.md](DESIGN.md) : on mesure à quelle cadence le service
-répond sans fatiguer, on s'arrête au premier signe de ralentissement, et le
-résultat part dans [SOURCE.md](SOURCE.md) comme n'importe quelle autre mesure.
-Tant qu'elle n'est pas faite, le plancher de temporisation reste un chiffre
-inventé, et la durée annoncée d'une campagne reste une supposition.
-
 La phase 3 est le premier livrable utile, et elle est possible **avant** tout
 téléchargement lourd grâce à la carte `QIXnJ` : une requête par station donne
 les bornes, la couverture et le mélange de statuts. C'est ce qui permet de
@@ -156,10 +149,14 @@ prose.
 ### 21 septembre 2026, rythme et nomenclature
 
 Le plancher de temporisation de deux secondes est retiré : c'était un chiffre
-inventé, et une mesure vaut mieux qu'une prudence de façade. La phase 2 s'ouvre
-donc sur une calibration, qui cherche le point de fonctionnement sûr et non le
-point de rupture. La durée d'une campagne complète, de l'ordre de quelques
-heures, cesse d'être une supposition.
+inventé. La calibration qui devait le remplacer a été faite dans la foulée, en
+cherchant le point de fonctionnement sûr et non le point de rupture, et **le
+service n'a pas bronché** de 11 à 39 requêtes par minute. N'ayant pas de seuil
+mesuré à respecter, la règle retenue s'indexe sur le service lui-même : attendre
+aussi longtemps que la requête précédente a mis à répondre, ce qui maintient
+notre rapport cyclique à 50 % quelles que soient la taille des requêtes et la
+charge du serveur, et supprime le dernier nombre arbitraire du code. La campagne
+complète est chiffrée à environ 2 h 40.
 
 `ref_codes.csv` est figé dans le code plutôt que rapatrié du Sandre à chaque
 exécution, avec un contrôle qui signale tout code inconnu. Vingt lignes

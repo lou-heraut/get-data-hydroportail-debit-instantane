@@ -304,6 +304,41 @@ Conséquence pour le code : **un 500 veut dire « ma fenêtre est trop large »,
 « le serveur est en panne »**. Y répondre par un recul exponentiel et cinq
 tentatives ferait replanter le service cinq fois.
 
+### Le rythme soutenable, et pourquoi on ne l'a pas trouvé
+
+Calibration du 21 septembre 2026. Requête témoin d'un mois de brut à Tarascon,
+environ 8 900 points et 50 Ko gzippés, avec une fenêtre différente à chaque
+appel pour ne pas mesurer un cache. Le délai entre requêtes vaut `k` fois le
+temps de réponse précédent, et `k` décroît par paliers de cinq répétitions.
+
+```
+    k   median    min    max  req/min  verdict
+  4.0    1.08s  0.98s  1.49s     11.1  sain
+  3.0    1.01s  0.83s  1.57s     14.8  sain
+  2.0    0.99s  0.89s  1.06s     20.2  sain
+  1.5    0.95s  0.89s  1.69s     25.3  sain
+  1.0    1.00s  0.90s  1.45s     30.0  sain
+  0.5    1.03s  0.90s  1.56s     38.9  sain
+
+reference initiale 1,21 s -> finale 0,98 s, soit -19 %
+```
+
+**Le temps de réponse reste plat de 11 à 39 requêtes par minute.** Le contrôle
+de dérive va dans le même sens : la référence refaite en fin d'expérience est
+plus rapide que celle du début, les 1,21 s initiales étant gonflées par
+l'établissement de la connexion. Le palier réel est à une seconde.
+
+**On n'a donc pas trouvé la limite polie, et cela ne prouve pas qu'elle
+n'existe pas.** Ce qui a été mesuré est un client seul, sur des requêtes
+moyennes, pendant quatre minutes. Rien n'est établi sur une charge soutenue
+pendant des heures, sur les requêtes sept fois plus lourdes d'une campagne
+réelle, ni sur ce que les autres usagers subissent pendant ce temps.
+
+La conclusion utile est ailleurs : **le facteur limitant n'est pas le débit de
+requêtes mais la taille des réponses**, dont la falaise est mesurée plus haut.
+C'est ce qui justifie une règle indexée sur le service plutôt qu'un chiffre de
+prudence, voir [DESIGN.md](DESIGN.md).
+
 ### gzip
 
 Une station-mois de brut à Tarascon, mars 2024, 8 928 points :
