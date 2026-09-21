@@ -110,13 +110,19 @@ attendre qu'on le demande :
 
 ## État
 
-**Aucun code au 21 septembre 2026.** La source est instruite, les choix de
-conception sont tranchés, la v1 peut être construite. La liste de ce qui est
-arrêté et ne se rediscute pas est en fin de [ROADMAP.md](ROADMAP.md).
+**v1.0.0 livrée le 21 septembre 2026**, taguée et poussée. L'outil télécharge,
+inventorie, écrit son datapackage et se contrôle lui-même ; le jeu de test de
+dix stations a été passé en entier et les cinq contrôles passent. Ce que cette
+version contient est dans [CHANGELOG.md](CHANGELOG.md).
 
-Ce qui reste ouvert y est aussi, et n'est pas à trancher seul : la liste réelle
-des 68 stations, et les quatre questions scientifiques de l'outil de
-rééchantillonnage.
+Ce n'est donc pas un chantier en cours : les modifications sont a priori des
+corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
+en fin de [ROADMAP.md](ROADMAP.md).
+
+Deux choses restent ouvertes et **ne sont pas à trancher seul** : la liste
+réelle des 68 stations, attendue de l'équipe demandeuse, et les quatre questions scientifiques
+de l'outil de rééchantillonnage, qui est ce que la demande d'origine réclamait
+vraiment. Elles sont décrites dans [ROADMAP.md](ROADMAP.md).
 
 ## Contexte
 
@@ -224,7 +230,7 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
 
 ## Vérifications après modification
 
-À compléter quand le code existera. La forme attendue, reprise des voisins :
+Dans cet ordre, du plus rapide au plus long :
 
 ```bash
 source .python_env/bin/activate
