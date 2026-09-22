@@ -297,6 +297,9 @@ pytest                                          # les fonctions pures, instantan
 python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
 ```
 
+Le `Makefile` abrège ce qui se répète, `make tests`, `make controler`,
+`make etat` ; il tient lieu de pense-bête et `make` seul le déroule.
+
 Les dix codes ne sont pas recopiés ici : ils sont dans
 `ressources/2026-09_jeu-de-test/stations.txt`, et ce que chacun illustre dans
 [SOURCE.md](SOURCE.md).

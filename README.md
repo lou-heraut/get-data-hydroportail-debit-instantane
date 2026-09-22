@@ -79,6 +79,10 @@ python download_hydroportail.py --cas bac-a-sable --inventaire \
 Comptez environ **trois minutes et 6 Mo par station**, pour les deux passes sur
 une chronique de quarante ans.
 
+Un `Makefile` sert de pense-bête pour ce qui se fait souvent : `make` seul liste
+ce qu'il sait faire, `make telecharger` lance la campagne détachée du terminal,
+`make etat` dit où elle en est, `make suivi` la regarde défiler.
+
 ### Suivre un téléchargement
 
 Chaque fenêtre est annoncée quand elle arrive, avec l'avancement dans la station
