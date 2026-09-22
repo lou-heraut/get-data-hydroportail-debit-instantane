@@ -15,7 +15,7 @@ Le fichier `stations.txt` est le contrat commun à tous les cas : un code par
 ligne, et rien d'autre.
 
 ```bash
-python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
-python download_hydroportail.py --cas 2026-09_jeu-de-test
-python verifier_hydroportail.py --cas 2026-09_jeu-de-test
+python download_hydroportail.py --case 2026-09_test-set --inventory
+python download_hydroportail.py --case 2026-09_test-set
+python check_hydroportail.py --case 2026-09_test-set
 ```

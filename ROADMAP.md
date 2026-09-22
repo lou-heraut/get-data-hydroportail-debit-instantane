@@ -69,7 +69,7 @@ sien. Cinq points demandent un arbitrage qui n'est pas technique :
    la v1 a refusé de faire point par point ; n'en garder qu'un seul ampute soit
    le passé, soit la finesse.
 3. **Le seuil au delà duquel on renonce à interpoler.** Il décide concrètement
-   si les années d'avant 2013 sortent vides ou remplies. `couverture.csv` donne
+   si les années d'avant 2013 sortent vides ou remplies. `coverage.csv` donne
    la distribution réelle des écarts station par station et année par année,
    c'est à elle qu'il faut le confronter.
 4. **Les modalités d'application du seuil** : coupe franche laissant la grille
@@ -105,13 +105,13 @@ Le cas `2026-09_eclusees-rmc` est prêt : sa liste est traduite, ses arbitrages
 sont posés et ses 47 stations sont inventoriées. Ce que la traduction et
 l'inventaire ont donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce
 qu'une liste réelle a donné » ; comment les trois stations ambiguës ont été
-tranchées est dans l'`arbitrages.csv` du cas, avec le motif de chacune.
+tranchées est dans l'`arbitrations.csv` du cas, avec le motif de chacune.
 
 Il reste à lancer le téléchargement, qui ne dépend d'aucune réponse puisqu'il
 rapatrie la donnée native dont toute grille se déduira :
 
 ```bash
-python download_hydroportail.py --cas 2026-09_eclusees-rmc
+python download_hydroportail.py --case 2026-09_eclusees-rmc
 ```
 
 Trois points à soumettre à l'équipe demandeuse, aucun ne bloque le
@@ -123,8 +123,8 @@ téléchargement :
    Ruffieux, ne sont pas conclus : le service refuse de servir une de leurs
    stations, et une station non sondée ne prouve rien.
 2. **L'écart entre 51 et les 68 stations annoncées**, toujours inexpliqué.
-3. **Le `couverture.csv` du cas**, à rendre pour qu'elle choisisse ses stations
-   et sa période. Dix-neuf lignes de `stations-demandees.csv` restent signalées,
+3. **Le `coverage.csv` du cas**, à rendre pour qu'elle choisisse ses stations
+   et sa période. Dix-neuf lignes de `resolved-stations.csv` restent signalées,
    pour information et non pour décision : un site qui porte plusieurs stations
    dont une seule s'appelle comme lui, ou une soeur refusée par le service qui
    ne changeait rien.
@@ -167,14 +167,23 @@ Bourne a St-Just       2003                        2026
 ```
 
 C'est ce qui a rendu les trois arbitrages évidents en quelques secondes. La
-place naturelle est le résumé de `--inventaire` et le rapport de
-`preparer_liste.py`, pas les CSV, qui restent des données.
+place naturelle est le résumé de `--inventory` et le rapport de
+`prepare_list.py`, pas les CSV, qui restent des données.
 
 **Le motif dépasse ce dépôt.** `get-data-hubeau-onde` et
 `get-data-vigieau-secheresse` ont le même problème, une couverture qu'aucun
 tableau ne montre : des campagnes de terrain par département et par année pour
 l'un, des arrêtés par zone et par année pour l'autre. Si la frise se révèle
 utile ici, elle est à reprendre là-bas.
+
+### Les variables locales, restées en français
+
+La v2.0.0 a mis à l'anglais ce par quoi on navigue : dossiers, fichiers,
+options, noms de fonctions et constantes de module. À l'intérieur des fonctions,
+les variables gardent leurs noms français, `lignes`, `fichier`, `dossier`,
+`restantes`. Aucune ne collisionne avec la prose, donc le renommage est
+mécanique, mais il n'apporte rien à qui lit le code de loin et il a été écarté
+au milieu d'une campagne en attente. À reprendre d'un bloc, quand rien ne tourne.
 
 ### Ramener les champs de texte du référentiel
 
@@ -201,7 +210,7 @@ que pour éviter de les rediscuter par oubli.
   unique par station dit le contraire de la vérité aux deux bouts.
 - **On prend tout.** La variabilité de quantité et de qualité est le principe de
   la donnée hydrométrique, pas un défaut à corriger ni une limite à excuser.
-- **`--statuts raw`**, pas `brut` : un nom de paramètre de la source se recopie.
+- **`--statuses raw`**, pas `brut` : un nom de paramètre de la source se recopie.
 - **Pas de compte HydroPortail**, le gain est illusoire sous gzip.
 - **Pas de hauteur d'eau**, seulement le débit.
 - **Pas de fusion par horodatage** entre niveaux de statut.

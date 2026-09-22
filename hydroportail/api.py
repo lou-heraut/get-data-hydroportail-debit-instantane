@@ -432,7 +432,7 @@ def coverage_map(cache: Path, code: str, first_year: int = 1900,
     for about two months.
 
     It says which days exist, never how finely. A day present may hold 288
-    points or 8, which is why the resolution columns of couverture.csv can only
+    points or 8, which is why the resolution columns of coverage.csv can only
     be filled once the series itself has been downloaded.
     """
     today = today or date.today()

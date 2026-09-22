@@ -459,7 +459,7 @@ ment pas sur le contenu.
 
 Une réserve à connaître : **la carte dit quels jours existent, pas à quelle
 finesse**. Un jour présent peut porter 288 points ou 8. La densité réelle ne se
-mesure qu'après téléchargement, et c'est pourquoi `couverture.csv` se remplit en
+mesure qu'après téléchargement, et c'est pourquoi `coverage.csv` se remplit en
 deux temps.
 
 ```
@@ -566,7 +566,7 @@ station par station et année par année.**
 
 ### Ce qu'une grille régulière trouverait sous elle
 
-Comptage du 22 septembre 2026 sur le `couverture.csv` du jeu de test, 341
+Comptage du 22 septembre 2026 sur le `coverage.csv` du jeu de test, 341
 couples station x année x statut, huit stations, 1970 à 2026. Les parts sont
 pondérées par les jours de données, pour qu'une année de trois jours ne pèse pas
 autant qu'une année pleine.

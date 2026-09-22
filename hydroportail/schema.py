@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-SCRIPT_VERSION = "1.1.0"
+SCRIPT_VERSION = "2.0.0"
 
 LICENSE = {
     "name": "GPL-3.0-or-later",
@@ -177,7 +177,7 @@ FIELDS: dict[str, list[dict[str, Any]]] = {
         _f("taux_couverture", "number",
            "Part des jours de la période qui portent une donnée, de 0 à 1."),
     ],
-    "couverture": [
+    "coverage": [
         _f("code_station", "string", "Code Sandre de la station."),
         _f("annee", "integer", "Année civile."),
         _f("statut", "integer",
@@ -211,7 +211,7 @@ FIELDS: dict[str, list[dict[str, Any]]] = {
         _f("nom_nomenclature", "string", "Intitulé de la nomenclature."),
         _f("source", "string", "D'où la table est tirée."),
     ],
-    "mesures": [
+    "measurements": [
         _f("code_station", "string", "Code Sandre de la station."),
         _f("date_obs", "datetime", "Horodatage UTC du point."),
         _f("debit_m3s", "number",
@@ -231,11 +231,11 @@ FIELDS: dict[str, list[dict[str, Any]]] = {
 
 PRIMARY_KEYS = {
     "stations": ["code_station"],
-    "couverture": ["code_station", "annee", "statut"],
+    "coverage": ["code_station", "annee", "statut"],
     "ref_codes": ["type", "code"],
 }
 
-TABLES = ("stations", "couverture", "ref_codes")
+TABLES = ("stations", "coverage", "ref_codes")
 
 
 def columns(table: str) -> list[str]:
@@ -283,7 +283,7 @@ def _resource(folder: Path, table: str, rows: int) -> dict[str, Any]:
             "missingValues": [""],
         },
     }
-    if table == "couverture":
+    if table == "coverage":
         resource["schema"]["foreignKeys"] = [{
             "fields": "code_station",
             "reference": {"resource": "stations", "fields": "code_station"},
@@ -291,21 +291,21 @@ def _resource(folder: Path, table: str, rows: int) -> dict[str, Any]:
     return resource
 
 
-def _mesures_resources(folder: Path) -> list[dict[str, Any]]:
+def _measurements_resources(folder: Path) -> list[dict[str, Any]]:
     """One entry per station, so that its fingerprint is its own.
 
     That granularity is the point: at the next pass, a station whose hash
     moved is a station whose past was rewritten, which is exactly what a
     revised rating curve does and what no date based logic would catch.
     """
-    mesures = folder / "mesures"
-    if not mesures.exists():
+    measurements = folder / "measurements"
+    if not measurements.exists():
         return []
     entries = []
-    for path in sorted(mesures.glob("*.parquet")):
+    for path in sorted(measurements.glob("*.parquet")):
         entries.append({
-            "name": f"mesures/{path.stem}",
-            "path": f"mesures/{path.name}",
+            "name": f"measurements/{path.stem}",
+            "path": f"measurements/{path.name}",
             "format": "parquet",
             "mediatype": "application/vnd.apache.parquet",
             "bytes": path.stat().st_size,
@@ -350,7 +350,7 @@ def build_datapackage(folder: Path, row_counts: dict[str, int],
         ],
         "resources": [_resource(folder, table, row_counts.get(table, 0))
                       for table in TABLES if (folder / f"{table}.csv").exists()],
-        "x_ressources_derivees": _mesures_resources(folder),
+        "x_ressources_derivees": _measurements_resources(folder),
         "x_provenance": {
             "route": SOURCE_AJAX,
             "telecharge_le": now,
@@ -364,7 +364,7 @@ def build_datapackage(folder: Path, row_counts: dict[str, int],
                 "point ; elle ne se deduit pas du statut, puisque sur les "
                 "periodes recentes la passe most_valid rend le point brut "
                 "lui-meme. La table ref_codes.csv et les colonnes de resolution "
-                "de couverture.csv sont ajoutees par ce script."
+                "de coverage.csv sont ajoutees par ce script."
             ),
             "avertissements": [
                 "Melanger les statuts par periode a un sens, c'est ce que fait "
@@ -375,7 +375,7 @@ def build_datapackage(folder: Path, row_counts: dict[str, int],
                 "qualification = 12 signifie « douteuse » et n'est pas rare : "
                 "c'est le seul drapeau de qualite porte par chaque point.",
                 "La resolution se decide station par station et annee par "
-                "annee, d'ou couverture.csv.",
+                "annee, d'ou coverage.csv.",
             ],
         },
         "x_couverture": coverage,

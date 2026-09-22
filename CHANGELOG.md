@@ -5,6 +5,57 @@ Format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage
 correction, le deuxième pour un ajout qui ne casse rien, le premier quand le
 format des données livrées change.
 
+## [2.0.0] - 2026-09-22
+
+Une règle de langue, et tout ce qui ne la respectait pas.
+
+### La règle
+
+**Le français est la langue de la documentation, et de ce dont le sujet est
+français par nature ; tout le reste est de la structure, et la structure est en
+anglais.** Ce qu'on tape est une instruction à une machine ; ce qu'on lit est de
+la prose adressée à quelqu'un, et ceux à qui elle s'adresse lisent le français.
+Elle est écrite dans `CLAUDE.md`.
+
+La donnée est le cas particulier, et il se déduit de la même règle plutôt que de
+lui échapper : les noms de colonnes viennent d'un service français pour des
+hydrologues français, `code_station` et `date_obs` sont les noms de Hub'Eau et
+non une traduction, donc ils ne bougent pas. Pas plus que `raw` et `most_valid`,
+qui viennent d'HydroPortail en anglais.
+
+### Ce qui change
+
+Les dossiers, les fichiers, les options et les noms de fonctions passent à
+l'anglais. Le nom d'un cas suit en revanche l'intitulé de la demande, donc
+`2026-09_eclusees-rmc` reste tel quel, quand le jeu de test, qui n'a pas
+d'intitulé extérieur, devient `2026-09_test-set`.
+
+```
+ressources/                 ->  cases/
+donnees_hydroportail/       ->  data/
+  .sources/                 ->    .cache/
+  <cas>/mesures/            ->    <case>/measurements/
+  <cas>/couverture.csv      ->    <case>/coverage.csv
+liste-recue.xlsx            ->  received-list.xlsx
+stations-demandees.csv      ->  resolved-stations.csv
+arbitrages.csv              ->  arbitrations.csv
+verifier_hydroportail.py    ->  check_hydroportail.py
+preparer_liste.py           ->  prepare_list.py
+--cas --racine --fichier    ->  --case --root --file
+--inventaire --statuts      ->  --inventory --statuses
+--silencieux, les-deux      ->  --quiet, both
+```
+
+### Incompatibilité
+
+Tout chemin et toute commande écrits pour une version antérieure sont à reprendre.
+Le schéma des tables, lui, n'a pas bougé d'une colonne : ce sont les noms des
+fichiers qui les portent qui changent, et le nom de la table `couverture` qui
+devient `coverage` dans le datapackage.
+
+Les cinq contrôles passent sur le jeu de test après renommage, et son
+datapackage reste valide.
+
 ## [1.1.0] - 2026-09-22
 
 Un dépôt qui ne télécharge jamais tout ne produit pas un jeu de données, mais

@@ -4,7 +4,7 @@
 
 # Le cas sur lequel tout porte. Surchargeable : make status CASE=2026-09_jeu-de-test
 CASE ?= 2026-09_eclusees-rmc
-ROOT ?= donnees_hydroportail
+ROOT ?= data
 PY   := .python_env/bin/python
 LOG  ?= ../.telechargement_$(CASE).log
 
@@ -30,8 +30,8 @@ status: ## Résumé en dix lignes : téléchargement, avancement, poids, dépôt
 	@git status -sb | head -3
 
 running: ## Dit si un téléchargement est en cours pour ce cas
-	@if pgrep -f "python download_hydroportail\.py --cas $(CASE)$$" > /dev/null; then \
-		echo "$(GREEN)Téléchargement en cours$(NC) (pid $$(pgrep -f "python download_hydroportail\.py --cas $(CASE)$$" | head -1))"; \
+	@if pgrep -f "python download_hydroportail\.py --case $(CASE)$$" > /dev/null; then \
+		echo "$(GREEN)Téléchargement en cours$(NC) (pid $$(pgrep -f "python download_hydroportail\.py --case $(CASE)$$" | head -1))"; \
 	else \
 		echo "$(YELLOW)Aucun téléchargement en cours$(NC)"; \
 	fi
@@ -45,7 +45,7 @@ progress: ## Où en est le téléchargement, et ce qui est déjà sur disque
 	else \
 		echo "  pas de journal : $(LOG)"; \
 	fi
-	@echo "  fichiers écrits : $$(ls $(ROOT)/$(CASE)/mesures/*.parquet 2>/dev/null | wc -l)"
+	@echo "  fichiers écrits : $$(ls $(ROOT)/$(CASE)/measurements/*.parquet 2>/dev/null | wc -l)"
 	@echo "  poids sur disque : $$(du -sh $(ROOT)/$(CASE) 2>/dev/null | cut -f1)"
 	@echo "  cache partagé : $$(du -sh $(ROOT)/.sources 2>/dev/null | cut -f1)"
 
@@ -58,20 +58,20 @@ log: ## Les trente dernières lignes du journal
 # ─── AGIR SUR LE CAS ─────────────────────────────────────────────────────────
 
 inventory: ## Ce que le cas contient, sans télécharger de chronique
-	$(PY) download_hydroportail.py --cas $(CASE) --racine $(ROOT) --inventaire
+	$(PY) download_hydroportail.py --case $(CASE) --root $(ROOT) --inventory
 
 download: ## Lance le téléchargement, détaché de ce terminal
-	@if pgrep -f "python download_hydroportail\.py --cas $(CASE)$$" > /dev/null; then \
+	@if pgrep -f "python download_hydroportail\.py --case $(CASE)$$" > /dev/null; then \
 		echo "Déjà en cours, rien à faire."; exit 1; \
 	fi
 	@echo "" >> $(LOG)
 	@echo "=== lancé le $$(date '+%Y-%m-%d %H:%M') ===" >> $(LOG)
-	@setsid nohup $(PY) download_hydroportail.py --cas $(CASE) --racine $(ROOT) \
+	@setsid nohup $(PY) download_hydroportail.py --case $(CASE) --root $(ROOT) \
 		>> $(LOG) 2>&1 < /dev/null & \
 	sleep 2; echo "Lancé. Journal : $(LOG), suivi : make watch"
 
 stop: ## Arrête le téléchargement ; le cache garde ce qui est déjà reçu
-	@pkill -f "python download_hydroportail\.py --cas $(CASE)$$" \
+	@pkill -f "python download_hydroportail\.py --case $(CASE)$$" \
 		&& echo "Arrêté. Relancer ne recoûtera rien de ce qui est en cache." \
 		|| echo "Rien à arrêter."
 
@@ -81,14 +81,14 @@ summary: ## Le résumé des tables du cas, sans rien télécharger
 
 cases: ## Liste les cas, ce qui est demandé et ce qui est obtenu
 	@echo "$(GREEN)Demandes$(NC)"
-	@for d in ressources/*/; do \
+	@for d in cases/*/; do \
 		n=$$(grep -c . "$$d/stations.txt" 2>/dev/null || echo 0); \
 		printf "  %-24s %3s stations demandées\n" "$$(basename $$d)" "$$n"; \
 	done
 	@echo "$(GREEN)Jeux produits$(NC)"
 	@for d in $(ROOT)/*/; do \
 		[ "$$(basename $$d)" = ".sources" ] && continue; \
-		p=$$(ls "$$d"/mesures/*.parquet 2>/dev/null | wc -l); \
+		p=$$(ls "$$d"/measurements/*.parquet 2>/dev/null | wc -l); \
 		printf "  %-24s %3s fichiers, %s\n" "$$(basename $$d)" "$$p" "$$(du -sh $$d | cut -f1)"; \
 	done
 
@@ -98,7 +98,7 @@ tests: ## Les tests unitaires, instantanés
 	$(PY) -m pytest -q
 
 check: ## Les cinq contrôles sur le jeu produit, puis le datapackage
-	$(PY) verifier_hydroportail.py --cas $(CASE) --racine $(ROOT)
+	$(PY) check_hydroportail.py --case $(CASE) --root $(ROOT)
 	@$(PY) -c "from frictionless import Package; \
 		print('datapackage valide :', \
 		Package('$(ROOT)/$(CASE)/datapackage.json').validate().valid)"

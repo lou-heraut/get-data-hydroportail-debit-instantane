@@ -8,9 +8,9 @@ bout à l'autre.
 
 | fichier | ce qu'il est |
 |---|---|
-| `liste-recue.xlsx` | la liste transmise, telle qu'elle a été reçue, jamais retouchée |
-| `stations-demandees.csv` | ce que `preparer_liste.py` en tire : codes normalisés, traduits en codes de station, confrontés au service |
-| `arbitrages.csv` | les choix que le script ne peut pas faire seul, avec leur motif |
+| `received-list.xlsx` | la liste transmise, telle qu'elle a été reçue, jamais retouchée |
+| `resolved-stations.csv` | ce que `prepare_list.py` en tire : codes normalisés, traduits en codes de station, confrontés au service |
+| `arbitrations.csv` | les choix que le script ne peut pas faire seul, avec leur motif |
 
 Les codes de la liste sont pour l'essentiel des codes de site, parce que c'est
 ce que les pages d'HydroPortail affichent en titre. Or les chroniques vivent sur
@@ -21,7 +21,7 @@ douze des quarante-cinq codes de site ne désignent pas la station numéro 01.
 Pour régénérer la table depuis la liste :
 
 ```bash
-python preparer_liste.py --cas 2026-09_eclusees-rmc
+python prepare_list.py --case 2026-09_eclusees-rmc
 ```
 
 Ce que la traduction a donné est mesuré dans [SOURCE.md](../../SOURCE.md),

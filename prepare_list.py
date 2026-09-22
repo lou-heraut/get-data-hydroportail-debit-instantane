@@ -7,7 +7,7 @@ La demande arrive sous la forme d'un tableur : des libellés, et des codes qui
 sont pour l'essentiel des codes de **site** et non des codes de **station**. Or
 les chroniques vivent sur les stations, et un code de site interrogé tel quel
 rend la série de sa station de référence sans dire laquelle. Passer le tableur
-à `--fichier` donnerait donc un jeu d'apparence normale et d'origine inconnue.
+à `--file` donnerait donc un jeu d'apparence normale et d'origine inconnue.
 Voir la section « Site et station » de SOURCE.md.
 
 Ce script fait trois choses, dans cet ordre :
@@ -21,9 +21,9 @@ Ce script fait trois choses, dans cet ordre :
 Il écrit une table de correspondance, une ligne par code demandé, qui dit quelle
 station a été retenue et pourquoi, et signale ce qui demande un regard humain.
 Cette table se relit et se corrige à la main : c'est elle qu'on donnera ensuite
-à `--fichier`, jamais le tableur.
+à `--file`, jamais le tableur.
 
-Usage : python preparer_liste.py [--cas 2026-09_eclusees-rmc]
+Usage : python preparer_liste.py [--case 2026-09_eclusees-rmc]
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ from typing import Any, Sequence
 
 import pandas as pd
 
-from hydroportail import api, chemins
+from hydroportail import api, paths
 from hydroportail.download import DEFAULT_ROOT
 
 logger = logging.getLogger("preparation")
@@ -49,29 +49,29 @@ logger = logging.getLogger("preparation")
 #: Un sous-dossier par demande, nommé `aaaa-mm_sujet`, et à l'intérieur des noms
 #: fixes : le dossier porte la date, les fichiers portent leur rôle. La
 #: convention et ce qui va où sont dans CLAUDE.md.
-RESSOURCES = Path("ressources")
-CAS = "2026-09_eclusees-rmc"
-TABLEUR = "liste-recue.xlsx"
-SORTIE = "stations-demandees.csv"
-ARBITRAGES = "arbitrages.csv"
-RETENUES = "stations.txt"
+CASES = Path("cases")
+DEFAULT_CASE = "2026-09_eclusees-rmc"
+SPREADSHEET = "received-list.xlsx"
+OUTPUT = "resolved-stations.csv"
+ARBITRATIONS = "arbitrations.csv"
+SELECTED = "stations.txt"
 
 #: Le vocabulaire de la colonne `cas` d'arbitrages.csv. Court et tenu : il sert
 #: à un lecteur pressé qui cherche si sa situation ressemble à une des nôtres.
-CAS_ARBITRAGE = ("remplacement", "deux-exploitants", "qualite-declaree")
+ARBITRATION_KINDS = ("remplacement", "deux-exploitants", "qualite-declaree")
 
 #: Espace de nommage du format xlsx, qui n'est qu'un zip de XML.
 _XL = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 #: Les colonnes attendues dans le tableur reçu, et leur nom de sortie.
-ENTETES = {
+HEADERS = {
     "Rivieres": "cours_eau_demande",
     "Station_HY": "libelle_demande",
     "Code_hydroportail": "code_demande",
     "Producteur": "producteur_demande",
 }
 
-COLONNES = [
+COLUMNS = [
     "ligne_source", "code_demande", "type_code_demande", "libelle_demande",
     "cours_eau_demande", "producteur_demande",
     "code_site", "code_station", "libelle_station", "cours_eau_station",
@@ -85,7 +85,7 @@ COLONNES = [
 #  Lire le tableur, sans dépendance supplémentaire
 # --------------------------------------------------------------------------
 
-def _chaines_partagees(archive: zipfile.ZipFile) -> list[str]:
+def _shared_strings(archive: zipfile.ZipFile) -> list[str]:
     """La table des chaînes, où les cellules de texte pointent par indice."""
     if "xl/sharedStrings.xml" not in archive.namelist():
         return []
@@ -94,7 +94,7 @@ def _chaines_partagees(archive: zipfile.ZipFile) -> list[str]:
             for item in racine]
 
 
-def _valeur(cellule: ET.Element, chaines: Sequence[str]) -> str:
+def _cell_value(cellule: ET.Element, chaines: Sequence[str]) -> str:
     """Le contenu d'une cellule, en texte, quel que soit son mode de stockage."""
     if cellule.get("t") == "inlineStr":
         return "".join(bout.text or "" for bout in cellule.iter(_XL + "t"))
@@ -107,7 +107,7 @@ def _valeur(cellule: ET.Element, chaines: Sequence[str]) -> str:
     return brut.text
 
 
-def lire_tableur(chemin: Path) -> list[dict[str, str]]:
+def read_spreadsheet(chemin: Path) -> list[dict[str, str]]:
     """Le tableur reçu, lu avec la bibliothèque standard.
 
     Un .xlsx est un zip de XML, et openpyxl ne servirait ici qu'à lire ce
@@ -116,7 +116,7 @@ def lire_tableur(chemin: Path) -> list[dict[str, str]]:
     structure inattendue lève plutôt que de passer inaperçue.
     """
     with zipfile.ZipFile(chemin) as archive:
-        chaines = _chaines_partagees(archive)
+        chaines = _shared_strings(archive)
         feuilles = [nom for nom in archive.namelist()
                     if nom.startswith("xl/worksheets/sheet")]
         if len(feuilles) != 1:
@@ -128,15 +128,15 @@ def lire_tableur(chemin: Path) -> list[dict[str, str]]:
         cellules: dict[str, str] = {}
         for cellule in ligne.iter(_XL + "c"):
             colonne = "".join(c for c in cellule.get("r", "") if c.isalpha())
-            cellules[colonne] = _valeur(cellule, chaines).strip()
+            cellules[colonne] = _cell_value(cellule, chaines).strip()
         brutes.append((int(ligne.get("r", 0)), cellules))
 
     if not brutes:
         raise ValueError(f"{chemin} : feuille vide.")
     _, entete = brutes[0]
-    noms = {colonne: ENTETES[titre] for colonne, titre in entete.items()
-            if titre in ENTETES}
-    manquantes = set(ENTETES.values()) - set(noms.values())
+    noms = {colonne: HEADERS[titre] for colonne, titre in entete.items()
+            if titre in HEADERS}
+    manquantes = set(HEADERS.values()) - set(noms.values())
     if manquantes:
         raise ValueError(f"{chemin} : colonnes absentes, {', '.join(sorted(manquantes))}.")
 
@@ -150,7 +150,7 @@ def lire_tableur(chemin: Path) -> list[dict[str, str]]:
     return lignes
 
 
-def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str, str]]:
+def read_arbitrations(chemin: Path) -> dict[str, tuple[str, str, str]]:
     """Les choix faits à la main, par code demandé, avec leur motif.
 
     Le script ne sait trancher qu'au libellé, et le libellé d'une liste désigne
@@ -165,10 +165,10 @@ def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str, str]]:
     manquantes = {"code_demande", "code_station", "cas", "motif"} - set(table.columns)
     if manquantes:
         raise ValueError(f"{chemin} : colonnes absentes, {', '.join(sorted(manquantes))}.")
-    inconnus = sorted(set(table["cas"].str.strip()) - set(CAS_ARBITRAGE))
+    inconnus = sorted(set(table["cas"].str.strip()) - set(ARBITRATION_KINDS))
     if inconnus:
         raise ValueError(f"{chemin} : cas inconnu(s), {', '.join(inconnus)}. "
-                         f"Le vocabulaire est {', '.join(CAS_ARBITRAGE)}.")
+                         f"Le vocabulaire est {', '.join(ARBITRATION_KINDS)}.")
     return {ligne.code_demande.strip(): (ligne.code_station.strip(),
                                          ligne.cas.strip(), ligne.motif.strip())
             for ligne in table.itertuples() if ligne.code_demande.strip()}
@@ -183,7 +183,7 @@ _SITE = re.compile(r"[A-Z][0-9A-Z]{7}")
 _STATION = re.compile(r"[A-Z][0-9A-Z]{9}")
 
 
-def normaliser_code(brut: str) -> str:
+def normalise_code(brut: str) -> str:
     """Le code sans ses espaces internes ni sa casse.
 
     Trois codes du tableur en portent une, ``W103 0003`` par exemple, ce qui
@@ -192,7 +192,7 @@ def normaliser_code(brut: str) -> str:
     return _ESPACES.sub("", (brut or "").replace(" ", " ")).upper()
 
 
-def type_de_code(code: str) -> str:
+def code_kind(code: str) -> str:
     """``site`` à huit caractères, ``station`` à dix, ``inconnu`` sinon."""
     if _SITE.fullmatch(code):
         return "site"
@@ -208,7 +208,7 @@ def _comparable(texte: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", sans_accent.lower()).split())
 
 
-def concordance(attendu: str, trouve: str) -> float:
+def similarity(attendu: str, trouve: str) -> float:
     """Ressemblance de deux libellés, entre 0 et 1.
 
     Le tableur écrit ``L_Arc_a_Aiguebelle`` là où le référentiel écrit
@@ -222,7 +222,7 @@ def concordance(attendu: str, trouve: str) -> float:
         None, _comparable(attendu), _comparable(trouve)).ratio(), 3)
 
 
-def _etendue(points: Sequence[dict[str, Any]]) -> tuple[str, str, int]:
+def _extent(points: Sequence[dict[str, Any]]) -> tuple[str, str, int]:
     """Premier jour, dernier jour, jours distincts portant de la donnée.
 
     Même règle que l'inventaire, jours distincts et non points, pour que les
@@ -257,14 +257,14 @@ def _candidates(lignes, records, par_site) -> dict[str, list[str]]:
     return candidates
 
 
-def _retenir(ligne, candidates, jours, records, non_servies):
+def _select(ligne, candidates, jours, records, non_servies):
     """La station retenue pour un code demandé, et la phrase qui dit pourquoi."""
     code, genre = ligne["code_demande"], ligne["type_code_demande"]
     porteuses = [c for c in candidates if jours.get(c, 0) > 0]
 
     def rang(station: str) -> tuple[float, int]:
         libelle = (records.get(station) or {}).get("libelle_station", "")
-        return (concordance(ligne["libelle_demande"], libelle), jours.get(station, 0))
+        return (similarity(ligne["libelle_demande"], libelle), jours.get(station, 0))
 
     if not porteuses:
         if not candidates:
@@ -288,10 +288,10 @@ def _retenir(ligne, candidates, jours, records, non_servies):
 
 #: Au delà de ce rapport, une soeur mieux fournie que la station retenue mérite
 #: un regard : le libellé a tranché, la donnée dit peut-être autre chose.
-ECART_SOEUR = 2.0
+SIBLING_RATIO = 2.0
 
 
-def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
+def _warnings(ligne: dict[str, Any], candidates: Sequence[str],
              jours: dict[str, int], non_servies: dict[str, str],
              arbitre: bool = False) -> str:
     """Ce qui demande un regard humain sur cette ligne, en clair.
@@ -308,7 +308,7 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
         soeurs = [(jours.get(code, 0), code) for code in candidates if code != retenue]
         if soeurs:
             mieux, code = max(soeurs)
-            if mieux >= ECART_SOEUR * max(jours.get(retenue, 0), 1):
+            if mieux >= SIBLING_RATIO * max(jours.get(retenue, 0), 1):
                 motifs.append(f"{code} porte {mieux} jours contre "
                               f"{jours.get(retenue, 0)} à la station retenue")
     if ligne["type_code_demande"] == "inconnu":
@@ -329,22 +329,22 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
     return " ; ".join(motifs)
 
 
-def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
+def prepare(case: str = DEFAULT_CASE, root: str = DEFAULT_ROOT) -> pd.DataFrame:
     """Du tableur reçu à la table de correspondance, en trois passes."""
-    demande = RESSOURCES / cas
+    demande = CASES / case
     if not demande.is_dir():
         raise FileNotFoundError(f"{demande} : ce dossier de demande n'existe pas.")
-    sortie = demande / SORTIE
-    _, cache = chemins(cas, racine)
-    lignes = lire_tableur(demande / TABLEUR)
-    choisies = lire_arbitrages(demande / ARBITRAGES)
+    sortie = demande / OUTPUT
+    _, cache = paths(case, root)
+    lignes = read_spreadsheet(demande / SPREADSHEET)
+    choisies = read_arbitrations(demande / ARBITRATIONS)
     if choisies:
-        logger.info("%d arbitrage(s) lu(s) dans %s.", len(choisies), demande / ARBITRAGES)
+        logger.info("%d arbitrage(s) lu(s) dans %s.", len(choisies), demande / ARBITRATIONS)
     logger.info("Tableur lu : %d ligne(s).", len(lignes))
 
     for ligne in lignes:
-        ligne["code_demande"] = normaliser_code(ligne["code_demande"])
-        ligne["type_code_demande"] = type_de_code(ligne["code_demande"])
+        ligne["code_demande"] = normalise_code(ligne["code_demande"])
+        ligne["type_code_demande"] = code_kind(ligne["code_demande"])
         ligne["code_site"] = ligne["code_demande"][:8]
 
     genres = pd.Series([ligne["type_code_demande"] for ligne in lignes]).value_counts()
@@ -382,7 +382,7 @@ def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
     non_servies: dict[str, str] = {}
     for numero, code in enumerate(a_sonder, start=1):
         try:
-            debut, fin, nombre = _etendue(api.coverage_map(cache, code))
+            debut, fin, nombre = _extent(api.coverage_map(cache, code))
         except (api.UnservedStation, api.UnknownStation) as erreur:
             # Ou le service ignore ce code, ou il échoue dessus quelle que soit
             # la fenêtre. Une campagne de cinquante stations ne peut pas
@@ -401,7 +401,7 @@ def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
 
     for ligne in lignes:
         code = ligne["code_demande"]
-        retenue, choix = _retenir(ligne, candidates[code], jours, records, non_servies)
+        retenue, choix = _select(ligne, candidates[code], jours, records, non_servies)
         arbitre = code in choisies
         if arbitre:
             retenue, cas_arbitrage, motif = choisies[code]
@@ -423,14 +423,14 @@ def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
             # Vide plutôt que zéro quand rien n'a été retenu : zéro voudrait
             # dire « mesuré à zéro », ce qui n'est pas la même chose.
             "jours_avec_donnees": nombre if retenue else "",
-            "concordance_libelle": concordance(
+            "concordance_libelle": similarity(
                 ligne["libelle_demande"], record.get("libelle_station", "")
             ) if retenue else "",
             "choix": choix,
         })
-        ligne["alerte"] = _alertes(ligne, candidates[code], jours, non_servies, arbitre)
+        ligne["alerte"] = _warnings(ligne, candidates[code], jours, non_servies, arbitre)
 
-    table = pd.DataFrame(lignes, columns=COLONNES)
+    table = pd.DataFrame(lignes, columns=COLUMNS)
     sortie.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(sortie, index=False, encoding="utf-8")
     logger.info("Écrit %s (%d lignes).", sortie, len(table))
@@ -439,12 +439,12 @@ def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
     # rien d'autre. Le téléchargeur n'a pas à savoir par quel chemin la liste
     # est arrivée.
     retenues = sorted({code for code in table["code_station"] if code})
-    (demande / RETENUES).write_text("\n".join(retenues) + "\n", encoding="utf-8")
-    logger.info("Écrit %s (%d stations).", demande / RETENUES, len(retenues))
+    (demande / SELECTED).write_text("\n".join(retenues) + "\n", encoding="utf-8")
+    logger.info("Écrit %s (%d stations).", demande / SELECTED, len(retenues))
     return table
 
 
-def resume(table: pd.DataFrame) -> None:
+def report(table: pd.DataFrame) -> None:
     """Ce qu'il faut regarder avant de se servir de la table."""
     retenues = table[table["code_station"] != ""]
     print(f"\n{len(table)} codes demandés, {retenues['code_station'].nunique()} "
@@ -464,16 +464,16 @@ def resume(table: pd.DataFrame) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Met au propre la liste de stations reçue et la confronte au service.")
-    parser.add_argument("--cas", default=CAS,
-                        help=f"sous-dossier de {RESSOURCES} (défaut : {CAS})")
-    parser.add_argument("--racine", default=DEFAULT_ROOT, metavar="CHEMIN",
+    parser.add_argument("--case", default=DEFAULT_CASE,
+                        help=f"sous-dossier de {CASES} (défaut : {DEFAULT_CASE})")
+    parser.add_argument("--root", default=DEFAULT_ROOT, metavar="CHEMIN",
                         help=f"racine des données (défaut : {DEFAULT_ROOT}), où "
                              "vit le cache des réponses partagé par les cas")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     try:
-        table = preparer(args.cas, args.racine)
+        table = prepare(args.case, args.root)
     except (ValueError, FileNotFoundError, api.APIError) as erreur:
         print(f"\nErreur : {erreur}", file=sys.stderr)
         return 1
@@ -481,7 +481,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\nInterrompu. Relancez : ce qui est déjà en cache ne sera pas "
               "redemandé.", file=sys.stderr)
         return 130
-    resume(table)
+    report(table)
     return 0
 
 

@@ -52,8 +52,8 @@ appartient à un commentaire dans le code ou à un message de commit.
 
 **Un cas est une liste de stations et la raison qui la justifie.** Le plus
 souvent une demande reçue, parfois un jeu qu'on s'est donné, comme le jeu de
-test. Il porte le même nom des deux côtés : `ressources/<cas>/` dit ce qu'on
-veut, `donnees_hydroportail/<cas>/` porte ce qu'on a obtenu. C'est ce qui trace
+test. Il porte le même nom des deux côtés : `cases/<case>/` dit ce qu'on
+veut, `data/<case>/` porte ce qu'on a obtenu. C'est ce qui trace
 le chemin de la demande au résultat, et ce qui donne à chaque petit jeu son
 datapackage et sa version.
 
@@ -66,8 +66,8 @@ porte.
 | `README.md` | le besoin en deux phrases, et ce que contient le dossier |
 | `stations.txt` | **le contrat** : un code par ligne, ce que le téléchargement lira |
 | `liste-recue.*` | ce que le demandeur a transmis, jamais retouché |
-| `stations-demandees.csv` | ce que `preparer_liste.py` en tire |
-| `arbitrages.csv` | les choix que le script ne peut pas faire seul |
+| `resolved-stations.csv` | ce que `prepare_list.py` en tire |
+| `arbitrations.csv` | les choix que le script ne peut pas faire seul |
 
 Seuls `README.md` et `stations.txt` sont obligatoires : un cas qu'on se donne
 soi-même n'a ni liste reçue, ni traduction, ni arbitrage.
@@ -76,13 +76,13 @@ soi-même n'a ni liste reçue, ni traduction, ni arbitrage.
 dans `SOURCE.md`.** Qu'un producteur déclare une de ses stations défaillante est
 un fait, il vaut pour tout le monde et se mesure une fois. Que l'on préfère pour
 autant la chronique longue à la station neuve est une décision propre à une
-étude, et elle vit dans son `arbitrages.csv`, avec son motif, parce que la
+étude, et elle vit dans son `arbitrations.csv`, avec son motif, parce que la
 même situation se trancherait autrement pour une autre question.
 
 **Aucune information personnelle dans ces fichiers**, ni nom, ni adresse, ni
 citation de courriel : le dépôt est public, et un besoin s'énonce sans cela.
 
-La colonne `cas` d'`arbitrages.csv` prend une valeur d'un vocabulaire court, qui
+La colonne `cas` d'`arbitrations.csv` prend une valeur d'un vocabulaire court, qui
 dit à qui arrive avec sa propre liste s'il est dans une situation connue. Le
 script refuse une valeur hors de cette liste, sans quoi le vocabulaire dériverait
 en champ libre :
@@ -160,7 +160,7 @@ inventorie, écrit son datapackage et se contrôle lui-même, et ce qu'il produi
 est découpé en cas. Ce que chaque version apporte est dans
 [CHANGELOG.md](CHANGELOG.md).
 
-Deux cas existent. `2026-09_jeu-de-test`, les dix stations qui couvrent les cas
+Deux cas existent. `2026-09_test-set`, les dix stations qui couvrent les cas
 limites, est téléchargé en entier et ses cinq contrôles passent : c'est sur lui
 que tourne la procédure de vérification ci-dessous. `2026-09_eclusees-rmc`, la
 demande en cours, a sa liste traduite, ses arbitrages posés et ses 47 stations
@@ -255,8 +255,8 @@ Debian/Ubuntu bloque `pip install` en système (PEP 668). Le venv du projet sera
 source .python_env/bin/activate
 ```
 
-`donnees_hydroportail/` est ignoré par git : les données se régénèrent. Un
-sous-dossier par cas y porte les tables, et `donnees_hydroportail/.sources/` le
+`data/` est ignoré par git : les données se régénèrent. Un
+sous-dossier par cas y porte les tables, et `data/.cache/` le
 cache des réponses reçues, commun à tous les cas et supprimable au prix d'un
 retéléchargement.
 
@@ -314,14 +314,14 @@ Dans cet ordre, du plus rapide au plus long :
 ```bash
 source .python_env/bin/activate
 pytest                                          # les fonctions pures, instantane
-python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
+python download_hydroportail.py --case 2026-09_test-set --inventory
 ```
 
 Le `Makefile` abrège ce qui se répète, `make tests`, `make controler`,
 `make etat` ; il tient lieu de pense-bête et `make` seul le déroule.
 
 Les dix codes ne sont pas recopiés ici : ils sont dans
-`ressources/2026-09_jeu-de-test/stations.txt`, et ce que chacun illustre dans
+`cases/2026-09_test-set/stations.txt`, et ce que chacun illustre dans
 [SOURCE.md](SOURCE.md).
 
 Attendu sur ces dix stations, et **en croissance d'un jour par jour** pour
@@ -338,7 +338,7 @@ W107403003   1886 j  2021-07-16 a 2026-09-20  100 %
 W107403001   3264 j  2011-06-02 a 2026-09-14   58 %   couverture trouee
 W103000301      0    aucun debit instantane
 V031661301      0    aucun debit instantane
-couverture.csv : 240 lignes, statuts {4: 14, 8: 8, 12: 29, 16: 189}
+coverage.csv : 240 lignes, statuts {4: 14, 8: 8, 12: 29, 16: 189}
 ```
 
 Et après téléchargement des deux passes sur ces mêmes dix stations, environ
@@ -347,14 +347,14 @@ Et après téléchargement des deux passes sur ces mêmes dix stations, environ
 ```
 8 fichiers parquet, 8 447 816 lignes, 47 Mo, environ 5,5 octets par ligne
 V720001002 : 2 825 465 lignes dont 111 286 pour la seule annee 2024
-couverture.csv : 343 lignes, statuts {4: 113, 8: 10, 12: 29, 16: 191}
+coverage.csv : 343 lignes, statuts {4: 113, 8: 10, 12: 29, 16: 191}
 ```
 
 Puis les contrôles, qui doivent tous passer :
 
 ```bash
-python verifier_hydroportail.py --cas 2026-09_jeu-de-test
-python -c "from frictionless import Package; print(Package('donnees_hydroportail/2026-09_jeu-de-test/datapackage.json').validate().valid)"
+python check_hydroportail.py --case 2026-09_test-set
+python -c "from frictionless import Package; print(Package('data/2026-09_test-set/datapackage.json').validate().valid)"
 ```
 
 ```

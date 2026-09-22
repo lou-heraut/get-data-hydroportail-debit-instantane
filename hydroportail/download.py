@@ -22,10 +22,10 @@ from . import api, schema
 
 logger = logging.getLogger("hydroportail")
 
-DEFAULT_ROOT = "donnees_hydroportail"
+DEFAULT_ROOT = "data"
 
 
-def chemins(cas: str, racine: str | Path = DEFAULT_ROOT) -> tuple[Path, Path]:
+def paths(case: str, root: str | Path = DEFAULT_ROOT) -> tuple[Path, Path]:
     """Where a case writes its tables, and where every case reads its cache.
 
     The cache sits at the root, above the cases, on purpose: a station fetched
@@ -33,8 +33,8 @@ def chemins(cas: str, racine: str | Path = DEFAULT_ROOT) -> tuple[Path, Path]:
     can cost minutes. The tables belong to a single case, because a datapackage
     describes one dataset and a demand is what gives that dataset its meaning.
     """
-    racine = Path(racine)
-    return racine / str(cas), racine / ".sources"
+    root = Path(root)
+    return root / str(case), root / ".cache"
 
 
 # --------------------------------------------------------------------------
@@ -77,7 +77,7 @@ def _coverage_rate(first: str, last: str, days: int) -> float | None:
 # --------------------------------------------------------------------------
 
 def inventory(
-    cas: str,
+    case: str,
     racine: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
     write: bool = True,
@@ -94,7 +94,7 @@ def inventory(
     on that station". A third party list cannot be trusted on this point: the
     obvious station of a site may hold water level only.
     """
-    folder, cache = chemins(cas, racine)
+    folder, cache = paths(case, root)
     codes = [str(code).strip() for code in codes if str(code).strip()]
     if not codes:
         raise ValueError("Aucun code de station demandé.")
@@ -136,14 +136,14 @@ def inventory(
 
     siblings, replacements = _resolve_sites(cache, codes, maps, records)
     stations = _stations_table(codes, maps, records, siblings, replacements)
-    couverture = _couverture_table(codes, maps)
+    coverage = _coverage_table(codes, maps)
     ref_codes = pd.DataFrame(schema.ref_codes_rows(), columns=schema.columns("ref_codes"))
 
     if refusees:
         logger.warning("  %d station(s) refusée(s) par le service, absente(s) des "
                        "tables : %s", len(refusees), ", ".join(refusees))
 
-    tables = {"stations": stations, "couverture": couverture, "ref_codes": ref_codes}
+    tables = {"stations": stations, "coverage": coverage, "ref_codes": ref_codes}
     if write:
         folder.mkdir(parents=True, exist_ok=True)
         for name, frame in tables.items():
@@ -222,7 +222,7 @@ def _stations_table(codes, maps, records, siblings, replacements) -> pd.DataFram
     return frame.sort_values("code_station").reset_index(drop=True)
 
 
-def _couverture_table(codes, maps) -> pd.DataFrame:
+def _coverage_table(codes, maps) -> pd.DataFrame:
     rows = []
     for code in codes:
         for (year, status), days in sorted(_days_by_year_and_status(maps[code]).items()):
@@ -238,7 +238,7 @@ def _couverture_table(codes, maps) -> pd.DataFrame:
                 "intervalle_median_min": pd.NA,
                 "intervalle_p90_min": pd.NA,
             })
-    frame = pd.DataFrame(rows, columns=schema.columns("couverture"))
+    frame = pd.DataFrame(rows, columns=schema.columns("coverage"))
     for column in ("nb_points",):
         frame[column] = frame[column].astype("Int64")
     return frame.sort_values(["code_station", "annee", "statut"]).reset_index(drop=True)
@@ -307,17 +307,17 @@ def summary(folder: str | Path) -> pd.DataFrame:
                         row["code_station"], str(row["libelle_station"])[:38],
                         f", voir {replacement}" if isinstance(replacement, str) and replacement else "")
 
-    couverture = tables.get("couverture")
-    if couverture is not None and not couverture.empty:
-        statuses = Counter(couverture["statut"])
+    coverage = tables.get("coverage")
+    if coverage is not None and not coverage.empty:
+        statuses = Counter(coverage["statut"])
         logger.info("")
-        logger.info("Couverture : %d lignes, statuts rencontrés %s.",
-                    len(couverture), dict(sorted(statuses.items())))
-        if couverture["nb_points"].isna().all():
+        logger.info("Couverture : %d lignes, statuses rencontrés %s.",
+                    len(coverage), dict(sorted(statuses.items())))
+        if coverage["nb_points"].isna().all():
             logger.info("Les colonnes de résolution restent vides tant que les "
                         "chroniques n'ont pas été téléchargées.")
         else:
-            manquantes = int(couverture["nb_points"].isna().sum())
+            manquantes = int(coverage["nb_points"].isna().sum())
             if manquantes:
                 logger.info("%d ligne(s) sans résolution : station non "
                             "téléchargée.", manquantes)
@@ -366,7 +366,7 @@ def _progres(status: str, begin: date, finish: date, rang: int, passes: int):
 def _to_frame(code: str, points: Sequence[dict[str, Any]], most_valid: bool) -> pd.DataFrame:
     """Points as published, one row each, nothing dropped and nothing judged."""
     if not points:
-        return pd.DataFrame(columns=schema.columns("mesures"))
+        return pd.DataFrame(columns=schema.columns("measurements"))
     frame = pd.DataFrame(points, columns=["t", "v", "s", "q", "m", "c"])
     out = pd.DataFrame({
         "code_station": code,
@@ -394,13 +394,13 @@ def _merge_passes(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
     one costs nothing.
 
     ``most_valid`` is true as soon as either pass returned the row, which is
-    what makes ``mesures[most_valid]`` exactly the producer's own chronicle.
+    what makes ``measurements[most_valid]`` exactly the producer's own chronicle.
     """
     frames = [frame for frame in frames if not frame.empty]
     if not frames:
-        return pd.DataFrame(columns=schema.columns("mesures"))
+        return pd.DataFrame(columns=schema.columns("measurements"))
     joined = pd.concat(frames, ignore_index=True)
-    keys = [column for column in schema.columns("mesures") if column != "most_valid"]
+    keys = [column for column in schema.columns("measurements") if column != "most_valid"]
     merged = joined.groupby(keys, as_index=False, sort=False)["most_valid"].max()
     return merged.sort_values(["code_station", "date_obs", "statut"]).reset_index(drop=True)
 
@@ -439,10 +439,10 @@ def _resolution(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def download(
-    cas: str,
+    case: str,
     racine: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
-    statuts: Sequence[str] = api.STATUSES,
+    statuses: Sequence[str] = api.STATUSES,
     write: bool = True,
 ) -> dict[str, pd.DataFrame]:
     """Download the series themselves, one parquet file per station.
@@ -453,16 +453,16 @@ def download(
     expected: raw does live underneath validated periods, and the windows
     accelerate through the empty years by themselves.
     """
-    folder, cache = chemins(cas, racine)
-    mesures = folder / "mesures"
+    folder, cache = paths(case, root)
+    measurements = folder / "measurements"
     unknown = {kind: set() for kind in ("s", "q", "m", "c")}
 
-    tables = inventory(cas, racine, codes, write=False)
+    tables = inventory(case, root, codes, write=False)
     stations = tables["stations"]
     working = stations[stations["porte_debit"].astype(bool)]
     logger.info("")
     logger.info("Téléchargement de %d station(s), passes %s.",
-                len(working), " et ".join(statuts))
+                len(working), " et ".join(statuses))
 
     resolutions = []
     depart = time.monotonic()
@@ -475,10 +475,10 @@ def download(
         debut_station = time.monotonic()
 
         frames = []
-        for rang, status in enumerate(statuts):
+        for rang, status in enumerate(statuses):
             points = api.fetch_series(
                 cache, code, status, begin, finish,
-                on_progress=_progres(status, begin, finish, rang, len(statuts)))
+                on_progress=_progres(status, begin, finish, rang, len(statuses)))
             for point in points:
                 for kind in ("s", "q", "m", "c"):
                     unknown[kind].add(int(point.get(kind) or 0))
@@ -489,8 +489,8 @@ def download(
         del frames
         taille = 0.0
         if write and not merged.empty:
-            mesures.mkdir(parents=True, exist_ok=True)
-            path = mesures / f"{code}.parquet"
+            measurements.mkdir(parents=True, exist_ok=True)
+            path = measurements / f"{code}.parquet"
             merged.to_parquet(path, compression="zstd", index=False)
             taille = path.stat().st_size / 1e6
         logger.info("        %s lignes, %.2f Mo, %s",
@@ -505,7 +505,7 @@ def download(
             logger.info("  reste environ %s pour %d station(s)",
                         _duree(reste), restantes)
 
-    tables["couverture"] = _fill_resolution(tables["couverture"], resolutions)
+    tables["coverage"] = _fill_resolution(tables["coverage"], resolutions)
 
     strays = schema.unknown_codes(unknown)
     if strays:
@@ -516,15 +516,15 @@ def download(
         folder.mkdir(parents=True, exist_ok=True)
         for name, frame in tables.items():
             _write_csv(frame, folder, name)
-        path = _write_datapackage(folder, tables, statuts)
+        path = _write_datapackage(folder, tables, statuses)
         logger.info("  écrit %s", path.name)
     return tables
 
 
 def _write_datapackage(folder: Path, tables: dict[str, pd.DataFrame],
-                       statuts: Sequence[str]) -> Path:
+                       statuses: Sequence[str]) -> Path:
     stations = tables["stations"]
-    couverture = tables["couverture"]
+    coverage = tables["coverage"]
     carrying = stations[stations["porte_debit"].astype(bool)]
     debut = carrying["date_debut_instantane"].min() if len(carrying) else None
     fin = carrying["date_fin_instantane"].max() if len(carrying) else None
@@ -533,16 +533,16 @@ def _write_datapackage(folder: Path, tables: dict[str, pd.DataFrame],
         "stations_avec_debit": int(len(carrying)),
         "date_debut": debut,
         "date_fin": fin,
-        "nb_points": int(couverture["nb_points"].sum(skipna=True) or 0),
-        "statuts_rencontres": sorted(int(s) for s in couverture["statut"].unique()),
+        "nb_points": int(coverage["nb_points"].sum(skipna=True) or 0),
+        "statuts_rencontres": sorted(int(s) for s in coverage["statut"].unique()),
     }
     content = schema.build_datapackage(
         folder, {name: len(frame) for name, frame in tables.items()},
-        coverage, statuts)
+        coverage, statuses)
     return schema.write_datapackage(folder, content)
 
 
-def _fill_resolution(couverture: pd.DataFrame,
+def _fill_resolution(coverage: pd.DataFrame,
                      resolutions: Sequence[pd.DataFrame]) -> pd.DataFrame:
     """Put the measured columns next to the ones the inventory already filled.
 
@@ -553,10 +553,10 @@ def _fill_resolution(couverture: pd.DataFrame,
     """
     measured = [frame for frame in resolutions if not frame.empty]
     if not measured:
-        return couverture
+        return coverage
     measured = pd.concat(measured, ignore_index=True)
     keys = ["code_station", "annee", "statut"]
-    merged = couverture.drop(columns=["nb_points", "intervalle_median_min",
+    merged = coverage.drop(columns=["nb_points", "intervalle_median_min",
                                       "intervalle_p90_min"]).merge(
         measured, on=keys, how="outer", suffixes=("_carte", ""))
     # The map labels a day by the status of its daily maximum, so a day holding
@@ -567,13 +567,13 @@ def _fill_resolution(couverture: pd.DataFrame,
                                     .fillna(merged["jours_avec_donnees_carte"])
                                     .astype("Int64"))
     merged["nb_points"] = merged["nb_points"].astype("Int64")
-    return merged[schema.columns("couverture")].sort_values(keys).reset_index(drop=True)
+    return merged[schema.columns("coverage")].sort_values(keys).reset_index(drop=True)
 
 
 def read(folder: str | Path) -> pd.DataFrame:
     """The fact table, every station at once."""
-    mesures = Path(folder) / "mesures"
-    if not mesures.exists():
+    measurements = Path(folder) / "measurements"
+    if not measurements.exists():
         raise FileNotFoundError(
-            f"Aucune mesure dans {mesures}. Lancez d'abord le téléchargement.")
-    return pd.read_parquet(mesures)
+            f"Aucune mesure dans {measurements}. Lancez d'abord le téléchargement.")
+    return pd.read_parquet(measurements)

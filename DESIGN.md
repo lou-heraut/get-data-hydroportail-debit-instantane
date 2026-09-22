@@ -60,16 +60,16 @@ donnerait à Tarascon en mars 2024 une série de 8 928 points dont 481 corrigés
 8 447 non corrigés, ni brute ni validée, avec des discontinuités là où les deux
 alternent. Cet objet là n'a pas de sens.
 
-### Ne pas tout télécharger : `--statuts`
+### Ne pas tout télécharger : `--statuses`
 
 Les deux passes n'ont pas le même coût, dans un rapport de 1 à 17 à Tarascon
 sur 2024 : 105 209 points bruts contre 6 077 en plus valides. Une option permet
 de ne prendre que ce dont on a besoin :
 
 ```
---statuts most_valid     la chronique arbitree par le producteur, seule
---statuts raw            le signal brut seul
---statuts les-deux       defaut, complet sur tout ce qui est publie
+--statuses most_valid     la chronique arbitree par le producteur, seule
+--statuses raw            le signal brut seul
+--statuses les-deux       defaut, complet sur tout ce qui est publie
 ```
 
 **Aucune des deux ne se suffit à elle-même, et le choix dépend de la question.**
@@ -85,13 +85,13 @@ des raisons pour lesquelles elle est le premier livrable.
 ## Ce que la v1 livre
 
 ```
-donnees_hydroportail/
-├── .sources/              json.gz   cache des reponses, partage par tous les cas
-└── <cas>/
+data/
+├── .cache/              json.gz   cache des reponses, partage par tous les cas
+└── <case>/
     ├── stations.csv       csv       une ligne par code demande, identite, bornes
-    ├── couverture.csv     csv       station x annee x statut, de quoi decider
+    ├── coverage.csv     csv       station x annee x statut, de quoi decider
     ├── ref_codes.csv      csv       vocabulaire de s, q, m, c, depuis Sandre
-    ├── mesures/           parquet   la table de faits, un fichier par station
+    ├── measurements/           parquet   la table de faits, un fichier par station
     └── datapackage.json   json      schema, provenance, empreintes sha256
 ```
 
@@ -99,7 +99,7 @@ donnees_hydroportail/
 lire. Tout le reste s'en déduit.
 
 **Un jeu par cas, un cache pour tous.** Un cas est une liste de stations et la
-raison qui la justifie, décrite dans `ressources/<cas>/`. Ce découpage vient de
+raison qui la justifie, décrite dans `cases/<case>/`. Ce découpage vient de
 ce qu'on ne télécharge jamais tout : ce dépôt ne produit pas un jeu unique mais
 autant de petits jeux que de demandes, et chacun mérite son datapackage, donc
 son identité et sa version. Le cache, lui, est commun, parce qu'une réponse déjà
@@ -171,7 +171,7 @@ qui est vrai pour `s` et pas pour `q` : une même série brute mêle `q=16` et
 ### Un fichier parquet par station
 
 ```
-mesures/
+measurements/
 ├── V720001002.parquet
 ├── W011001001.parquet
 └── ...
@@ -185,7 +185,7 @@ constante dans un fichier, le parquet la réduit à presque rien.
 Le découpage par station est aussi celui des empreintes sha256, donc une par
 station, ce qui rendra directement mesurable au passage suivant quelles stations
 ont bougé. Le découpage par fenêtre de téléchargement ne remonte pas jusqu'au
-disque : il vit dans `.sources/`.
+disque : il vit dans `.cache/`.
 
 ## Une seule table, pas deux
 
@@ -193,7 +193,7 @@ Le plan initial prévoyait un second dossier `chronique/`, la passe `most_valid`
 seule, une ligne par horodatage, pour le confort de relecture. **Il est
 abandonné.**
 
-Par construction `chronique/` vaut exactement `mesures[most_valid]` : c'est une
+Par construction `chronique/` vaut exactement `measurements[most_valid]` : c'est une
 vue, pas une table. La stocker doublerait le disque et créerait une surface
 d'incohérence pour une information déjà présente. L'analogie avec
 `onde_full.parquet` du dépôt voisin ne tenait pas : celui-ci est une
@@ -207,19 +207,19 @@ considération savante, les deux lignes qui la produisent :
 
 ```python
 import pandas as pd
-mesures = pd.read_parquet("donnees_hydroportail/<cas>/mesures/")
-chronique = mesures[mesures.most_valid]
+measurements = pd.read_parquet("data/<case>/measurements/")
+chronique = measurements[measurements.most_valid]
 ```
 
 ```r
 library(arrow)
-mesures <- read_parquet("donnees_hydroportail/<cas>/mesures/")
-chronique <- mesures[mesures$most_valid, ]
+measurements <- read_parquet("data/<case>/measurements/")
+chronique <- measurements[measurements$most_valid, ]
 ```
 
 et dire en une phrase ce que cette chronique est : la donnée arbitrée par le
 producteur, homogène par blocs, qui convient à la plupart des usages
-hydrologiques. Le reste de `mesures/` sert à ceux qui ont besoin de descendre
+hydrologiques. Le reste de `measurements/` sert à ceux qui ont besoin de descendre
 au brut, et le README doit dire comment savoir si on en a besoin, en renvoyant
 à la table de couverture.
 
@@ -236,7 +236,7 @@ Une ligne par code demandé, y compris ceux qui ne portent aucun débit :
 - les bornes réelles de l'instantané et le taux de couverture, obtenus par la
   carte `QIXnJ` sans rien télécharger de lourd.
 
-### `couverture.csv`
+### `coverage.csv`
 
 Le plan initial mettait un `intervalle_median_min` unique par station dans
 `stations.csv`. La mesure montre que la résolution varie d'un facteur 20 au
@@ -288,11 +288,11 @@ C'est cette table qui répond à la seule question qui compte pour le sujet
 éclusées : **cette station, cette année là, décrit-elle une éclusée ?** Elle ne
 répond pas à sa place : elle lui donne de quoi trancher.
 
-### `--inventaire`, avant de télécharger
+### `--inventory`, avant de télécharger
 
-Comme chez les voisins, `--inventaire` interroge la carte de couverture et
+Comme chez les voisins, `--inventory` interroge la carte de couverture et
 s'arrête, sans toucher aux chroniques. Il affiche un résumé et **écrit
-`stations.csv` et les colonnes d'inventaire de `couverture.csv`**, de sorte que
+`stations.csv` et les colonnes d'inventaire de `coverage.csv`**, de sorte que
 son résultat se transmette et se discute au lieu de défiler à l'écran.
 
 C'est ce qui permet de voir ce qu'une liste de codes contient réellement avant
@@ -330,14 +330,14 @@ table**. C'est le seul moment où l'on a besoin d'apprendre qu'une nomenclature 
 bougé, et cela arrive alors comme un avertissement explicite plutôt que comme un
 libellé vide.
 
-## Le cache des réponses, `.sources/`
+## Le cache des réponses, `.cache/`
 
 Les réponses JSON gzippées telles que reçues, une par requête, donc une par
 station, passe et fenêtre :
 
 ```
-.sources/V720001002/2024_raw.json.gz
-.sources/V720001002/2024_most_valid.json.gz
+.cache/V720001002/2024_raw.json.gz
+.cache/V720001002/2024_most_valid.json.gz
 ```
 
 L'année sert d'unité de compte mais **n'est pas imposée par l'API**, et le nom
@@ -346,7 +346,7 @@ des fichiers suivra la fenêtre réellement retenue.
 Il vit à la racine, au dessus des cas, et non dans le dossier d'un cas : deux
 demandes qui partagent une station ne la rapatrient qu'une fois.
 
-Même rôle que `donnees_vigieau/.sources/` chez le voisin : reconstruire les
+Même rôle que `donnees_vigieau/.cache/` chez le voisin : reconstruire les
 tables sans retélécharger, ce qui compte double ici puisque chaque passage coûte
 de la bande passante à HydroPortail. Il porte aussi la trace de ce qui a été
 servi à une date donnée, seul moyen de constater plus tard qu'une révision de
@@ -463,9 +463,9 @@ comme des recommandations et non comme des contraintes techniques :
 - **lancer les campagnes longues la nuit ou le week-end**, hors heures ouvrées ;
 - **ne jamais lancer plusieurs exécutions en parallèle** pour aller plus vite,
   ce qui annulerait d'un coup toutes les précautions du code ;
-- **commencer par `--inventaire`**, puis ne télécharger que ce dont on a besoin
-  avec `--statuts`, plutôt que de tout prendre par défaut et de trier après ;
-- **garder le cache `.sources/`**, qui évite de redemander au service ce qu'il a
+- **commencer par `--inventory`**, puis ne télécharger que ce dont on a besoin
+  avec `--statuses`, plutôt que de tout prendre par défaut et de trier après ;
+- **garder le cache `.cache/`**, qui évite de redemander au service ce qu'il a
   déjà donné ;
 - et dire en une phrase que cette source est **un service public gratuit sans
   contrepartie**, dont la capacité est finie et partagée avec tous les autres
@@ -553,10 +553,10 @@ README porte les avertissements :
 
 ```
 besoin                                        ou regarder
-savoir si une station convient                stations.csv puis couverture.csv
-chronique propre directement exploitable      mesures[most_valid]
-selection personnalisee sur les codes         mesures, avec les 4 codes
-signal infra-horaire des eclusees             mesures, filtrer statut = 4
+savoir si une station convient                stations.csv puis coverage.csv
+chronique propre directement exploitable      measurements[most_valid]
+selection personnalisee sur les codes         measurements, avec les 4 codes
+signal infra-horaire des eclusees             measurements, filtrer statut = 4
 ```
 
 ## Conventions d'écriture
@@ -583,8 +583,8 @@ produit ou de paramètre se recopie, il ne se traduit pas, sous peine de rompre
 le lien avec la documentation d'origine.
 
 **Cette règle vaut aussi pour les options de la ligne de commande.** Le plan
-initial proposait `--statuts brut | most_valid | les-deux`, ce qui traduisait
-`raw` et pas `most_valid` sur la même ligne. C'est `--statuts raw` qui est
+initial proposait `--statuses brut | most_valid | les-deux`, ce qui traduisait
+`raw` et pas `most_valid` sur la même ligne. C'est `--statuses raw` qui est
 retenu, par simple application de la règle ci-dessus.
 
 ## La mise à jour incrémentale, écartée en v1
@@ -612,7 +612,7 @@ download_hydroportail.py    ~130 l   interface en ligne de commande
 hydroportail/api.py         ~300 l   HTTP, politesse, fenetrage, cache, Hub'Eau
 hydroportail/schema.py      ~350 l   colonnes, types, vocabulaire, datapackage
 hydroportail/download.py    ~450 l   orchestration, ecriture, relecture
-verifier_hydroportail.py    ~130 l   non-perte et integrite
+check_hydroportail.py    ~130 l   non-perte et integrite
 tests/                      ~180 l   les quatre fonctions pures
 ```
 
@@ -644,5 +644,5 @@ synthétique, et ne se vérifie pratiquement pas sur des données réelles.
 
 Tout ce qui demande le réseau est traité autrement, comme chez les voisins :
 des valeurs de référence dans [CLAUDE.md](CLAUDE.md), et
-`verifier_hydroportail.py` qui rejoue le cache `.sources/` pour vérifier que
-tout point reçu se retrouve dans `mesures/`.
+`check_hydroportail.py` qui rejoue le cache `.cache/` pour vérifier que
+tout point reçu se retrouve dans `measurements/`.

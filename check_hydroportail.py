@@ -12,7 +12,7 @@ qu'elles portent sur des données réelles et non sur des fonctions :
    est le pari sur lequel repose le choix de ne télécharger que deux passes ;
 4. aucun code de qualité n'a échappé à la nomenclature figée.
 
-Usage : python verifier_hydroportail.py --cas 2026-09_jeu-de-test
+Usage : python verifier_hydroportail.py --case 2026-09_jeu-de-test
 """
 
 from __future__ import annotations
@@ -28,13 +28,13 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from hydroportail import api, chemins
+from hydroportail import api, paths
 from hydroportail.download import DEFAULT_ROOT
 
 logger = logging.getLogger("verification")
 
 
-def _points_du_cache(cache: Path, code: str) -> pd.DataFrame:
+def _points_from_cache(cache: Path, code: str) -> pd.DataFrame:
     """Tout ce que le service a servi pour cette station, en Q instantané.
 
     Relu depuis les réponses brutes, sans repasser par le code de fusion :
@@ -53,15 +53,15 @@ def _points_du_cache(cache: Path, code: str) -> pd.DataFrame:
     return pd.DataFrame(lignes, columns=["t", "v", "s", "q", "m", "c"])
 
 
-def verifier_non_perte(dossier: Path, cache: Path) -> bool:
-    """Tout point servi se retrouve dans mesures/, et rien n'y a été inventé."""
+def check_no_loss(dossier: Path, cache: Path) -> bool:
+    """Tout point servi se retrouve dans measurements/, et rien n'y a été inventé."""
     logger.info("1. Non-perte entre le cache et les mesures")
-    mesures = dossier / "mesures"
+    measurements = dossier / "measurements"
     intact = True
 
-    for fichier in sorted(mesures.glob("*.parquet")):
+    for fichier in sorted(measurements.glob("*.parquet")):
         code = fichier.stem
-        servi = _points_du_cache(cache, code)
+        servi = _points_from_cache(cache, code)
         if servi.empty:
             logger.warning("   %s : aucun cache, contrôle impossible", code)
             continue
@@ -90,7 +90,7 @@ def verifier_non_perte(dossier: Path, cache: Path) -> bool:
     return intact
 
 
-def verifier_recoupement_hubeau(dossier: Path, code: str = "V720001002") -> bool:
+def check_against_hubeau(dossier: Path, code: str = "V720001002") -> bool:
     """Ce qu'on a est-il ce que Hub'Eau diffuse, au litre près.
 
     Hub'Eau ne sert l'instantané que sur un mois glissant, donc le recoupement
@@ -98,7 +98,7 @@ def verifier_recoupement_hubeau(dossier: Path, code: str = "V720001002") -> bool
     les deux services parlent bien de la même donnée, pas de tout revérifier.
     """
     logger.info("2. Recoupement avec Hub'Eau sur %s", code)
-    fichier = dossier / "mesures" / f"{code}.parquet"
+    fichier = dossier / "measurements" / f"{code}.parquet"
     if not fichier.exists():
         logger.warning("   %s absent, contrôle sauté", code)
         return True
@@ -147,7 +147,7 @@ def verifier_recoupement_hubeau(dossier: Path, code: str = "V720001002") -> bool
     return True
 
 
-def verifier_inclusion_statuts(dossier: Path, cache: Path,
+def check_status_inclusion(dossier: Path, cache: Path,
                                codes: list[str] | None = None) -> bool:
     """most_valid contient-elle toujours pre_validated_and_validated.
 
@@ -165,7 +165,7 @@ def verifier_inclusion_statuts(dossier: Path, cache: Path,
     correct = True
 
     for code in codes:
-        fichier = dossier / "mesures" / f"{code}.parquet"
+        fichier = dossier / "measurements" / f"{code}.parquet"
         if not fichier.exists():
             continue
         intermediaires = api.fetch_series(cache, code, "pre_validated_and_validated",
@@ -180,7 +180,7 @@ def verifier_inclusion_statuts(dossier: Path, cache: Path,
                      if (point["t"], int(point["s"])) not in connus]
         if manquants:
             correct = False
-            logger.error("   %s : %d point(s) pré-validés absents de mesures/ ; "
+            logger.error("   %s : %d point(s) pré-validés absents de measurements/ ; "
                          "l'inclusion ne tient plus, il faut télécharger la "
                          "troisième passe", code, len(manquants))
         else:
@@ -189,13 +189,13 @@ def verifier_inclusion_statuts(dossier: Path, cache: Path,
     return correct
 
 
-def verifier_codes(dossier: Path) -> bool:
+def check_codes(dossier: Path) -> bool:
     """Aucun code de qualité n'a échappé à la nomenclature figée."""
     logger.info("4. Codes de qualité connus")
     reference = pd.read_csv(dossier / "ref_codes.csv")
     connus = set(zip(reference["type"], reference["code"]))
     inconnus = set()
-    for fichier in sorted((dossier / "mesures").glob("*.parquet")):
+    for fichier in sorted((dossier / "measurements").glob("*.parquet")):
         frame = pd.read_parquet(fichier, columns=["statut", "qualification",
                                                   "methode", "continuite"])
         for colonne, genre in (("statut", "s"), ("qualification", "q"),
@@ -211,29 +211,29 @@ def verifier_codes(dossier: Path) -> bool:
     return True
 
 
-def verifier_integrite(dossier: Path) -> bool:
-    """couverture.csv ne parle que de stations que stations.csv connaît."""
+def check_integrity(dossier: Path) -> bool:
+    """coverage.csv ne parle que de stations que stations.csv connaît."""
     logger.info("5. Intégrité référentielle")
     stations = pd.read_csv(dossier / "stations.csv", dtype={"code_station": "string"})
-    couverture = pd.read_csv(dossier / "couverture.csv", dtype={"code_station": "string"})
-    orphelines = set(couverture["code_station"]) - set(stations["code_station"])
+    coverage = pd.read_csv(dossier / "coverage.csv", dtype={"code_station": "string"})
+    orphelines = set(coverage["code_station"]) - set(stations["code_station"])
     if orphelines:
-        logger.error("   %d station(s) de couverture.csv absente(s) de "
+        logger.error("   %d station(s) de coverage.csv absente(s) de "
                      "stations.csv : %s", len(orphelines), sorted(orphelines))
         return False
-    logger.info("   %d lignes de couverture, aucune orpheline", len(couverture))
+    logger.info("   %d lignes de couverture, aucune orpheline", len(coverage))
     return True
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Contrôle le jeu produit par un cas.")
-    parser.add_argument("--cas", required=True, metavar="NOM",
+    parser.add_argument("--case", required=True, metavar="NOM",
                         help="nom du cas à contrôler, ex. 2026-09_jeu-de-test")
-    parser.add_argument("--racine", default=DEFAULT_ROOT, metavar="CHEMIN",
+    parser.add_argument("--root", default=DEFAULT_ROOT, metavar="CHEMIN",
                         help=f"racine des données (défaut : {DEFAULT_ROOT})")
     args = parser.parse_args(argv)
-    dossier, cache = chemins(args.cas, args.racine)
+    dossier, cache = paths(args.case, args.root)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if not (dossier / "stations.csv").exists():
@@ -241,11 +241,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     resultats = [
-        verifier_non_perte(dossier, cache),
-        verifier_recoupement_hubeau(dossier),
-        verifier_inclusion_statuts(dossier, cache),
-        verifier_codes(dossier),
-        verifier_integrite(dossier),
+        check_no_loss(dossier, cache),
+        check_against_hubeau(dossier),
+        check_status_inclusion(dossier, cache),
+        check_codes(dossier),
+        check_integrity(dossier),
     ]
     logger.info("")
     if all(resultats):

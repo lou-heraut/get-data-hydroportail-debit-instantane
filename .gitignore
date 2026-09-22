@@ -11,4 +11,4 @@ build/
 dist/
 
 # Données téléchargées : elles se régénèrent avec download_hydroportail.py
-donnees_hydroportail/
+data/

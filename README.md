@@ -41,16 +41,16 @@ facultative du `datapackage.json` demande `frictionless` :
 ## Télécharger
 
 **Tout part d'un cas.** Un cas est une liste de stations et la raison qui la
-justifie : `ressources/<cas>/stations.txt` porte un code par ligne, et ses
-tables sortiront sous `donnees_hydroportail/<cas>/`. Le dépôt en contient deux,
-`2026-09_jeu-de-test` et `2026-09_eclusees-rmc` ; en créer un est un dossier et
+justifie : `cases/<case>/stations.txt` porte un code par ligne, et ses
+tables sortiront sous `data/<case>/`. Le dépôt en contient deux,
+`2026-09_test-set` et `2026-09_eclusees-rmc` ; en créer un est un dossier et
 un fichier texte.
 
 **Commencez toujours par l'inventaire.** Une requête rapide par station, sans
 toucher aux chroniques, qui dit ce que ces codes contiennent réellement :
 
 ```bash
-python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
+python download_hydroportail.py --case 2026-09_test-set --inventory
 ```
 
 ```
@@ -66,13 +66,13 @@ Puis le téléchargement proprement dit :
 
 ```bash
 # les deux passes, brut et chronique arbitrée par le producteur
-python download_hydroportail.py --cas 2026-09_jeu-de-test
+python download_hydroportail.py --case 2026-09_test-set
 
 # la chronique arbitrée seule : dix fois plus légère, suffit à beaucoup d'usages
-python download_hydroportail.py --cas 2026-09_jeu-de-test --statuts most_valid
+python download_hydroportail.py --case 2026-09_test-set --statuses most_valid
 
 # quelques stations hors de tout cas, pour regarder
-python download_hydroportail.py --cas bac-a-sable --inventaire \
+python download_hydroportail.py --case bac-a-sable --inventory \
     --stations V720001002 W011001001
 ```
 
@@ -105,19 +105,19 @@ L'avancement est donc mesuré sur la période couverte, pas sur le nombre de
 fenêtres.
 
 Une interruption ne fait rien perdre : les réponses déjà reçues sont gardées
-dans `.sources/` et ne sont pas redemandées. Relancer la même commande reprend
+dans `.cache/` et ne sont pas redemandées. Relancer la même commande reprend
 où elle s'était arrêtée, sans coûter une seule requête pour ce qui est déjà là.
-`--silencieux` n'affiche que les erreurs.
+`--quiet` n'affiche que les erreurs.
 
 ## À quoi ressemblent les données
 
 ```
-donnees_hydroportail/
-├── .sources/               cache des reponses recues, partage par tous les cas
-├── 2026-09_jeu-de-test/
-│   ├── mesures/            un fichier parquet par station, la table de faits
+data/
+├── .cache/               cache des reponses recues, partage par tous les cas
+├── 2026-09_test-set/
+│   ├── measurements/            un fichier parquet par station, la table de faits
 │   ├── stations.csv        identite et couverture reelle, une ligne par code
-│   ├── couverture.csv      station x annee x statut, de quoi choisir
+│   ├── coverage.csv      station x annee x statut, de quoi choisir
 │   ├── ref_codes.csv       le sens des quatre codes de qualite
 │   └── datapackage.json    schema, provenance, empreintes SHA-256
 └── 2026-09_eclusees-rmc/
@@ -128,7 +128,7 @@ donnees_hydroportail/
 une station rapatriée pour une demande ne l'est jamais deux fois. C'est aussi
 ce qui rend « j'ai utilisé le jeu `2026-09_eclusees-rmc` en v1.1.0 » exact.
 
-### `mesures/`, la table de faits
+### `measurements/`, la table de faits
 
 **Une ligne par point publié**, et rien d'autre :
 
@@ -180,7 +180,7 @@ fournie par un tiers ne peut pas être prise au mot** : sur le site de l'Arc à
 Aiguebelle, la station au nom le plus évident n'a qu'une couverture de 58 %, et
 c'est une voisine qui porte la série continue.
 
-### `couverture.csv`
+### `coverage.csv`
 
 **La table qui sert à décider quoi analyser.** Une ligne par station, année et
 statut :
@@ -222,7 +222,7 @@ m,10,EXP,"Expertisée, issue du jugement d'un hydromètre"
 
 ## Deux façons de lire, selon ce qu'on a sous la main
 
-`mesures/` est un dossier de fichiers parquet, un par station. Cela se lit de
+`measurements/` est un dossier de fichiers parquet, un par station. Cela se lit de
 deux manières, et il est utile de savoir laquelle on veut :
 
 | ce qu'on a | ce qu'on lit | avec quoi |
@@ -247,37 +247,37 @@ exactement le prix de son fichier.
 ```python
 import pandas as pd
 
-jeu = "donnees_hydroportail/2026-09_jeu-de-test"
+jeu = "data/2026-09_test-set"
 
 # une station : un fichier, qui se lit seul
-serie = pd.read_parquet(f"{jeu}/mesures/W011001001.parquet")
+serie = pd.read_parquet(f"{jeu}/measurements/W011001001.parquet")
 
 # toutes les stations : le dossier s'ouvre comme une table unique
-mesures = pd.read_parquet(f"{jeu}/mesures/")
+measurements = pd.read_parquet(f"{jeu}/measurements/")
 ```
 
 **La chronique propre**, c'est à dire la donnée telle que le producteur
 l'arbitre, tient en une ligne :
 
 ```python
-chronique = mesures[mesures.most_valid]
+chronique = measurements[measurements.most_valid]
 ```
 
 C'est l'objet qui convient à la plupart des usages hydrologiques : homogène par
 blocs, validé sur le passé consolidé, brut seulement là où rien de mieux
-n'existe encore. Le reste de `mesures` sert à qui a besoin de descendre au
-signal brut, et `couverture.csv` dit si on en a besoin.
+n'existe encore. Le reste de `measurements` sert à qui a besoin de descendre au
+signal brut, et `coverage.csv` dit si on en a besoin.
 
 ```python
 # le signal brut seul, a 5 minutes sur les annees recentes
-brut = mesures[mesures.statut == 4]
+brut = measurements[measurements.statut == 4]
 
 # ecarter les points que le producteur signale comme douteux
-sur = mesures[mesures.qualification != 12]
+sur = measurements[measurements.qualification != 12]
 
 # une station, une annee
-extrait = mesures[(mesures.code_station == "W011001001")
-                  & (mesures.date_obs.dt.year == 2024)]
+extrait = measurements[(measurements.code_station == "W011001001")
+                  & (measurements.date_obs.dt.year == 2024)]
 ```
 
 Pour ne pas tout charger en mémoire, `pyarrow.dataset` donne la lecture
@@ -287,7 +287,7 @@ paresseuse, qui n'ouvre que les fichiers nécessaires :
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-table = ds.dataset(f"{jeu}/mesures/", format="parquet")
+table = ds.dataset(f"{jeu}/measurements/", format="parquet")
 serie = table.to_table(filter=pc.field("code_station") == "W011001001").to_pandas()
 ```
 
@@ -301,23 +301,23 @@ subtilité, et elle vaut d'être connue : appeler `read_parquet` sur le dossier
 library(arrow)
 library(dplyr)
 
-jeu <- "donnees_hydroportail/2026-09_jeu-de-test"
+jeu <- "data/2026-09_test-set"
 
 # une station : un fichier
-serie <- read_parquet(file.path(jeu, "mesures/W011001001.parquet"))
+serie <- read_parquet(file.path(jeu, "measurements/W011001001.parquet"))
 
 # toutes les stations : un dataset, qui ne charge rien tant qu'on ne collecte pas
-mesures <- open_dataset(file.path(jeu, "mesures/"))
-nrow(mesures)
+measurements <- open_dataset(file.path(jeu, "measurements/"))
+nrow(measurements)
 
 # la chronique propre, arbitree par le producteur
-chronique <- mesures |> filter(most_valid) |> collect()
+chronique <- measurements |> filter(most_valid) |> collect()
 
 # une seule station : seul son fichier est lu
-extrait <- mesures |> filter(code_station == "W011001001") |> collect()
+extrait <- measurements |> filter(code_station == "W011001001") |> collect()
 
 # les codes de station gardent leurs lettres et leurs zeros
-couverture <- read.csv(file.path(jeu, "couverture.csv"),
+couverture <- read.csv(file.path(jeu, "coverage.csv"),
                        colClasses = c(code_station = "character"))
 ```
 
@@ -347,7 +347,7 @@ Conséquence pour qui étudie les variations rapides : **l'hydromètre a élagu�
 selon ce qui l'intéressait**, qui n'est pas forcément la variation infra-horaire.
 À Tarascon la courbe validée a un pas médian de 70 minutes en mars 2024 ; à
 Moûtiers elle a 5 055 points pour 8 906 bruts sur le même mois. Cela se décide
-station par station et année par année, d'où `couverture.csv`.
+station par station et année par année, d'où `coverage.csv`.
 
 ### Mélanger les statuts par période a un sens, par horodatage non
 
@@ -363,9 +363,9 @@ alternent. Cet objet n'a pas de signification, et ce dépôt ne le produit pas.
 
 ### Descendre d'un cran est légitime
 
-C'est même l'usage principal de `mesures/` : prendre la chronique arbitrée en
+C'est même l'usage principal de `measurements/` : prendre la chronique arbitrée en
 général, et le brut sur les périodes où la résolution validée ne suffit pas.
-`couverture.csv` est là pour dire où est la frontière.
+`coverage.csv` est là pour dire où est la frontière.
 
 ### Deux limites de la source
 
@@ -389,9 +389,9 @@ loin de ce qu'il ne sait pas produire. Elles ne valent que si l'usage suit :
   stations dure environ deux heures et demie ;
 - **ne jamais lancer plusieurs exécutions en parallèle** pour aller plus vite :
   cela annule d'un coup toutes les précautions du code ;
-- **commencer par `--inventaire`**, qui montre ce qui existe sans rien
-  télécharger de lourd, puis ne prendre que le nécessaire avec `--statuts` ;
-- **garder le cache `.sources/`**, qui évite de redemander ce qui a déjà été
+- **commencer par `--inventory`**, qui montre ce qui existe sans rien
+  télécharger de lourd, puis ne prendre que le nécessaire avec `--statuses` ;
+- **garder le cache `.cache/`**, qui évite de redemander ce qui a déjà été
   donné.
 
 Pour se signaler nommément avant une campagne longue, une variable
@@ -404,11 +404,11 @@ export HYDROPORTAIL_CONTACT="prenom.nom@exemple.fr"
 ## Vérifier le jeu produit
 
 ```bash
-python verifier_hydroportail.py
+python check_hydroportail.py
 ```
 
 Cinq contrôles, dont le plus important est la non-perte : tout point servi par
-HydroPortail doit se retrouver dans `mesures/`, ce qui se vérifie en relisant
+HydroPortail doit se retrouver dans `measurements/`, ce qui se vérifie en relisant
 les réponses brutes du cache sans repasser par le code qui les a assemblées. Les
 autres recoupent les valeurs avec Hub'Eau, vérifient que les nomenclatures n'ont
 pas bougé, et que l'intégrité référentielle tient.
