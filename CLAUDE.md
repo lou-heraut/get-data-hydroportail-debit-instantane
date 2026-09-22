@@ -119,10 +119,14 @@ Ce n'est donc pas un chantier en cours : les modifications sont a priori des
 corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
 en fin de [ROADMAP.md](ROADMAP.md).
 
-Deux choses restent ouvertes et **ne sont pas à trancher seul** : la liste
-réelle des 68 stations, attendue de l'équipe demandeuse, et les quatre questions scientifiques
-de l'outil de rééchantillonnage, qui est ce que la demande d'origine réclamait
-vraiment. Elles sont décrites dans [ROADMAP.md](ROADMAP.md).
+La liste des stations est arrivée le 22 septembre 2026, avec la précision du pas
+de temps attendu. Ses 51 codes, dont 45 codes de site, sont normalisés et
+traduits en codes de station dans `ressources/stations-demandees_2026-09-22.csv`
+par `preparer_liste.py`. Le chantier courant est de trancher les lignes que ce
+fichier signale, puis d'inventorier. Restent ouverts, et **pas à trancher
+seul**, les arbitrages de l'outil de rééchantillonnage, qui est ce que la
+demande d'origine réclamait vraiment. Tout est décrit dans
+[ROADMAP.md](ROADMAP.md).
 
 ## Contexte
 

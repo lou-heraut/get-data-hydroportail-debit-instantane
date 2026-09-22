@@ -106,41 +106,33 @@ argumentée plutôt que de question ouverte.
 
 ### La liste des stations, reçue le 22 septembre 2026
 
-`Liste_stations_hydro.xlsx`, **51 lignes et non 68** : cours d'eau, libellé,
-code, producteur, pour 25 cours d'eau du Doubs à la Corse. Ce que l'inspection
-du fichier montre, avant tout appel au service :
+Le fichier tel qu'il a été reçu est dans `ressources/liste-recue_2026-09-22.xlsx`,
+et `preparer_liste.py` en a tiré `ressources/stations-demandees_2026-09-22.csv` :
+51 codes normalisés, traduits en codes de station et confrontés au service, avec
+pour chacun comment il a été résolu et ce qui reste douteux. Ce que la traduction
+a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce qu'une liste réelle
+a donné ».
 
-- **45 des 51 codes sont des codes de site**, huit caractères, et non des codes
-  de station à dix. Six seulement sont des codes de station.
-- trois codes portent une espace au milieu : `W103 0003`, `W010 0001`,
-  `V126 0020`.
-- huit lignes n'ont pas de producteur, et un libellé de cours d'eau porte une
-  note de travail, « Jaur + Ru bureau ».
-- quatre des dix stations du jeu de test sont dans la liste au niveau site, dont
-  l'Arc à Aiguebelle, site à trois stations dont l'une est trouée à 58 %, et
-  l'Arc à Saint-Michel, dont la station évidente ne porte aucun débit instantané.
+Ce qui reste à faire :
 
-Le piège est silencieux : HydroPortail sert un code de site sans broncher, en
-rendant la série de sa station de référence sans dire laquelle, et `inventory()`
-ne s'en protège pas aujourd'hui. Passer le fichier tel quel produirait un
-résultat d'apparence normale et d'origine inconnue.
-
-Ce qui reste à faire, dans l'ordre :
-
-1. **Ranger le fichier reçu** dans un dossier de ressources versionné, tel quel,
-   et produire à côté un CSV propre : codes normalisés, colonnes nommées, une
-   ligne par code demandé.
-2. **Traduire les codes de site en codes de station** par le référentiel
-   Hub'Eau, puis vérifier avec la carte de couverture que la station retenue
-   porte bien du débit instantané. Un site à plusieurs stations demande un choix
-   explicite et tracé.
+1. **Trancher les vingt-deux lignes signalées**, et d'abord les trois où le
+   libellé a retenu une station bien moins fournie qu'une soeur : la Siagne à
+   Pégomas, 224 jours contre 19 932 ; la Bourne à Saint-Just-de-Claix, 64 contre
+   3 241 ; le Verdon à Vinon, 2 142 contre 7 074. Le libellé est le seul indice
+   dont le script dispose, et il ne suffit pas quand deux stations portent des
+   noms également plausibles. La correction se fait à la main dans le CSV.
+2. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des absences
+   établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne portent
+   aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet et le
+   Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une de
+   leurs stations, et une station non sondée ne prouve rien.
 3. **Inventorier** les stations retenues, une requête de deux secondes chacune,
    sans télécharger de chronique.
 4. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses stations et sa
    période avant qu'on engage les heures de téléchargement.
 
-L'écart entre 51 et les 68 stations annoncées n'est pas expliqué, et vaut d'être
-posé.
+L'écart entre 51 et les 68 stations annoncées n'est toujours pas expliqué, et
+vaut d'être posé avec le reste.
 
 ### Le réseau RRSE
 

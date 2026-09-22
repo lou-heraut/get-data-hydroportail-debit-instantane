@@ -497,6 +497,25 @@ Bien plus grande que ce que Tarascon laissait croire : **1970** au Reyran à
 Fréjus, **1981** à l'Isère à Moûtiers et à l'Ain à Pont-d'Ain, contre 1994 à
 Tarascon.
 
+La liste demandée va plus loin encore, **1901** sur trois stations de l'Ardèche
+et 1912 sur le Chassezac. Mais la nature de la donnée change avec l'âge, et il
+faut le savoir avant de promettre quoi que ce soit sur cette période :
+
+```
+V501403001, Q most_valid
+  mars 1901      1 point par jour, a 07:00              s=12 q=12 m=10
+  janvier 1912   1 point par jour, a 07:00              s=12 q=12 m=10
+  janvier 1960   jusqu'a 3 par jour, 07:00 12:00 17:00  s=12 q=12 m=10
+  mars 2024      88 points en 3 jours, infra-horaire    s=16 q=20 m=10
+```
+
+Ce sont des relevés d'échelle saisis à la main, pré-validés et qualifiés
+douteux, et non la chronique d'une sonde. La carte de couverture ne ment pas
+pour autant, `QIXnJ` existe bien là où `Q` existe ; simplement un jour couvert
+en 1901 porte une lecture de sept heures du matin, et le `md` de ces points,
+l'instant du maximum, ne vaut que `00:00:00`, `07:00:00` ou `23:59:59`, ce qui
+est la marque d'un remplissage.
+
 ### Mais le brut ne remonte qu'à 2013 ou 2014
 
 Points bruts sur la première semaine de mars :
@@ -678,6 +697,31 @@ la règle, pas un risque de doublon.
 **Règle retenue : interroger les stations, jamais les sites.** Mais résoudre
 chaque code demandé vers son site, lister les stations soeurs, et dire laquelle
 porte le débit. Une liste fournie par un tiers ne peut pas être prise au mot.
+
+### Ce qu'une liste réelle a donné
+
+Mesuré le 22 septembre 2026 sur les 51 codes de la demande, dont 45 codes de
+site, résolus par Hub'Eau puis sondés un par un avec la carte de couverture.
+
+```
+51 codes demandes           45 de site, 6 de station
+84 stations candidates      1,6 par code demande
+ 6 refusees par le service  4 en 500, 2 en 404
+47 stations retenues
+ 4 codes sans station       2 absences etablies, 2 non etablies faute de sondage
+```
+
+**Douze des 45 codes de site ne désignent pas la station `<site>01`.** Huit
+portent leur débit sur une autre station du site, quatre n'en ont aucune qui en
+porte. Ajouter « 01 » à un code de site, qui est le réflexe naturel, se serait
+donc trompé une fois sur quatre.
+
+Quatorze sites ont plusieurs stations portant du débit, et leurs libellés disent
+pourquoi : le site nu d'un côté, de l'autre des variantes suffixées par
+l'exploitant (`- EDF`, `- DREAL`, `- DIREN`), par l'instrument (`- Limnimètre`,
+`- Débitmètre`) ou par l'usage (`- Échelle Annonce de Crues`). Le suffixe ne dit
+pas laquelle est la bonne, et l'écart de contenu va jusqu'au facteur cent : à
+Pégomas, une station porte 19 932 jours et sa voisine 224.
 
 Le doublement, lui, existe bien mais **chez Hub'Eau** : `observations_tr`
 interrogé avec un code de site renvoie chaque observation deux fois, une fois
