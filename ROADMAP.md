@@ -99,44 +99,40 @@ argumentée plutôt que de question ouverte.
 
 ## Les questions ouvertes
 
-### La liste des stations, reçue le 22 septembre 2026
+### La campagne des éclusées
 
-Tout tient dans `ressources/2026-09_eclusees-rmc/`, dont le `README.md` dit le
-besoin : la liste telle qu'elle a été reçue, et ce que `preparer_liste.py` en
-tire, 51 codes normalisés, traduits en codes de station et confrontés au
-service, avec pour chacun comment il a été résolu et ce qui reste douteux. Ce
-que la traduction a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce
-qu'une liste réelle a donné ».
+Le cas `2026-09_eclusees-rmc` est prêt : sa liste est traduite, ses arbitrages
+sont posés et ses 47 stations sont inventoriées. Ce que la traduction et
+l'inventaire ont donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce
+qu'une liste réelle a donné » ; comment les trois stations ambiguës ont été
+tranchées est dans l'`arbitrages.csv` du cas, avec le motif de chacune.
 
-Les choix que le script ne peut pas faire seul vivent dans l'`arbitrages.csv`
-du dossier, avec leur motif et leur type, plutôt que dans le CSV produit, qui se
-réécrit à chaque passage. Trois ont été tranchés, et la règle
-qui s'en dégage vaut pour la suite : **c'est la donnée qui prime sur
-l'exploitant demandé.** Quand la station nommée ne publie pas d'instantané et
-qu'une autre du même point en publie, on prend celle qui en publie et on le
-signale. C'est ce qui a été fait pour la Bourne, où la station EDF demandée ne
-porte que 64 jours contre 3 241 à celle de la DREAL, et c'est déjà ce que le
-script faisait pour les trois stations CNR du Rhône qui ne publient rien.
+Il reste à lancer le téléchargement, qui ne dépend d'aucune réponse puisqu'il
+rapatrie la donnée native dont toute grille se déduira :
 
-Ce qui reste à faire :
+```bash
+python download_hydroportail.py --cas 2026-09_eclusees-rmc
+```
 
-1. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des
-   absences établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne
-   portent aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet
-   et le Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une
-   de leurs stations, et une station non sondée ne prouve rien.
-2. **Inventorier** les stations retenues, une requête de deux secondes chacune,
-   sans télécharger de chronique.
-3. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses
-   stations et sa période avant qu'on engage les heures de téléchargement.
+Trois points à soumettre à l'équipe demandeuse, aucun ne bloque le
+téléchargement :
 
-Les dix-neuf lignes encore signalées le sont pour information et non pour
-décision : un site porte plusieurs stations dont une seule s'appelle comme lui,
-ou le service a refusé une soeur qui ne changeait rien. Elles se relisent au
-moment de rendre la liste.
+1. **Les quatre codes sans station.** Deux sont des absences établies, l'Arc à
+   Saint-Michel et l'Eau d'Olle à Allemond, qui ne portent aucun débit
+   instantané. Les deux autres, la Romanche à Livet-et-Gavet et le Rhône à
+   Ruffieux, ne sont pas conclus : le service refuse de servir une de leurs
+   stations, et une station non sondée ne prouve rien.
+2. **L'écart entre 51 et les 68 stations annoncées**, toujours inexpliqué.
+3. **Le `couverture.csv` du cas**, à rendre pour qu'elle choisisse ses stations
+   et sa période. Dix-neuf lignes de `stations-demandees.csv` restent signalées,
+   pour information et non pour décision : un site qui porte plusieurs stations
+   dont une seule s'appelle comme lui, ou une soeur refusée par le service qui
+   ne changeait rien.
 
-L'écart entre 51 et les 68 stations annoncées n'est toujours pas expliqué, et
-vaut d'être posé avec le reste.
+**La règle qui s'est dégagée des arbitrages vaut pour les cas suivants : la
+donnée prime sur l'exploitant demandé.** Quand la station nommée ne publie pas
+d'instantané et qu'une autre du même point en publie, on prend celle qui en
+publie et on le signale.
 
 ### Le réseau RRSE
 

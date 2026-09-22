@@ -155,22 +155,26 @@ attendre qu'on le demande :
 
 ## État
 
-**v1.0.0 livrée le 21 septembre 2026**, taguée et poussée. L'outil télécharge,
-inventorie, écrit son datapackage et se contrôle lui-même ; le jeu de test de
-dix stations a été passé en entier et les cinq contrôles passent. Ce que cette
-version contient est dans [CHANGELOG.md](CHANGELOG.md).
+**v1.1.0 livrée le 22 septembre 2026**, taguée et poussée. L'outil télécharge,
+inventorie, écrit son datapackage et se contrôle lui-même, et ce qu'il produit
+est découpé en cas. Ce que chaque version apporte est dans
+[CHANGELOG.md](CHANGELOG.md).
 
-Ce n'est donc pas un chantier en cours : les modifications sont a priori des
+Deux cas existent. `2026-09_jeu-de-test`, les dix stations qui couvrent les cas
+limites, est téléchargé en entier et ses cinq contrôles passent : c'est sur lui
+que tourne la procédure de vérification ci-dessous. `2026-09_eclusees-rmc`, la
+demande en cours, a sa liste traduite, ses arbitrages posés et ses 47 stations
+inventoriées ; **son téléchargement reste à lancer**, environ 280 Mo et deux
+heures et demie.
+
+Ce n'est donc pas un chantier de fond : les modifications sont a priori des
 corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
 en fin de [ROADMAP.md](ROADMAP.md).
 
-La liste des stations est arrivée le 22 septembre 2026, avec la précision du pas
-de temps attendu. Ses 51 codes, dont 45 codes de site, sont normalisés et
-traduits en codes de station par `preparer_liste.py`, dans le dossier de demande
-`ressources/2026-09_eclusees-rmc/`. Le chantier courant est de trancher les
-lignes que ce fichier signale, puis d'inventorier. Restent ouverts, et **pas à
-trancher seul**, les arbitrages de l'outil de rééchantillonnage, qui est ce que
-la demande d'origine réclamait vraiment. Tout est décrit dans
+Reste ouvert, et **pas à trancher seul**, l'outil de rééchantillonnage, qui est
+ce que la demande d'origine réclamait vraiment : la v1 livre la donnée native, à
+son pas natif, pas la chronique à pas régulier que l'étude des éclusées réclame.
+Cinq arbitrages et deux questions à poser sont décrits dans
 [ROADMAP.md](ROADMAP.md).
 
 ## Contexte

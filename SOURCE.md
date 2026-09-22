@@ -723,6 +723,22 @@ l'exploitant (`- EDF`, `- DREAL`, `- DIREN`), par l'instrument (`- Limnimètre`,
 pas laquelle est la bonne, et l'écart de contenu va jusqu'au facteur cent : à
 Pégomas, une station porte 19 932 jours et sa voisine 224.
 
+**Ce que les 47 stations retenues contiennent**, inventorié le 22 septembre 2026
+sans télécharger une seule chronique :
+
+```
+47 stations, toutes portent du debit instantane
+416 542 jours, 1 374 station-annees, 1 449 lignes de couverture
+profondeur mediane  5 979 jours, soit seize ans
+la plus profonde    24 736 jours, l'Ain a Chazey-sur-Ain depuis 1959
+4 stations sous 1 000 jours, 8 sous 60 % de couverture
+statuts (lignes)    {4: 97, 8: 21, 12: 252, 16: 1079}
+```
+
+Par extrapolation du coût mesuré plus bas, la campagne complète pèse de l'ordre
+de **280 Mo et deux heures et demie**. La moitié basse de la liste n'existe que
+depuis 2013 ou après, ce qui recoupe la date d'apparition du brut.
+
 Le doublement, lui, existe bien mais **chez Hub'Eau** : `observations_tr`
 interrogé avec un code de site renvoie chaque observation deux fois, une fois
 attribuée à la station et une fois au site avec `code_station` nul. Vérifié,
