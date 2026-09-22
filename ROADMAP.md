@@ -174,6 +174,12 @@ C'est ce qui a rendu les trois arbitrages évidents en quelques secondes. La
 place naturelle est le résumé de `--inventaire` et le rapport de
 `preparer_liste.py`, pas les CSV, qui restent des données.
 
+**Le motif dépasse ce dépôt.** `get-data-hubeau-onde` et
+`get-data-vigieau-secheresse` ont le même problème, une couverture qu'aucun
+tableau ne montre : des campagnes de terrain par département et par année pour
+l'un, des arrêtés par zone et par année pour l'autre. Si la frise se révèle
+utile ici, elle est à reprendre là-bas.
+
 ### Ramener les champs de texte du référentiel
 
 `commentaire_station`, `commentaire_influence_locale_station` et

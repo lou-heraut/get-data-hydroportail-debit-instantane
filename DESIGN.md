@@ -86,16 +86,25 @@ des raisons pour lesquelles elle est le premier livrable.
 
 ```
 donnees_hydroportail/
-├── stations.csv       csv       une ligne par code demande, identite et bornes
-├── couverture.csv     csv       station x annee x statut, de quoi decider
-├── ref_codes.csv      csv       vocabulaire de s, q, m, c, engendre depuis Sandre
-├── mesures/           parquet   la table de faits, un fichier par station
-├── datapackage.json   json      schema, provenance, empreintes sha256
-└── .sources/          json.gz   cache des reponses recues, ignore par git
+├── .sources/              json.gz   cache des reponses, partage par tous les cas
+└── <cas>/
+    ├── stations.csv       csv       une ligne par code demande, identite, bornes
+    ├── couverture.csv     csv       station x annee x statut, de quoi decider
+    ├── ref_codes.csv      csv       vocabulaire de s, q, m, c, depuis Sandre
+    ├── mesures/           parquet   la table de faits, un fichier par station
+    └── datapackage.json   json      schema, provenance, empreintes sha256
 ```
 
 **Une seule table de faits**, et trois tables de référence qui disent comment la
 lire. Tout le reste s'en déduit.
+
+**Un jeu par cas, un cache pour tous.** Un cas est une liste de stations et la
+raison qui la justifie, décrite dans `ressources/<cas>/`. Ce découpage vient de
+ce qu'on ne télécharge jamais tout : ce dépôt ne produit pas un jeu unique mais
+autant de petits jeux que de demandes, et chacun mérite son datapackage, donc
+son identité et sa version. Le cache, lui, est commun, parce qu'une réponse déjà
+reçue n'a aucune raison d'être redemandée pour une autre demande, et qu'une
+fenêtre de chronique coûte des minutes.
 
 ## La table de faits
 
@@ -198,13 +207,13 @@ considération savante, les deux lignes qui la produisent :
 
 ```python
 import pandas as pd
-mesures = pd.read_parquet("donnees_hydroportail/mesures/")
+mesures = pd.read_parquet("donnees_hydroportail/<cas>/mesures/")
 chronique = mesures[mesures.most_valid]
 ```
 
 ```r
 library(arrow)
-mesures <- read_parquet("donnees_hydroportail/mesures/")
+mesures <- read_parquet("donnees_hydroportail/<cas>/mesures/")
 chronique <- mesures[mesures$most_valid, ]
 ```
 
@@ -333,6 +342,9 @@ station, passe et fenêtre :
 
 L'année sert d'unité de compte mais **n'est pas imposée par l'API**, et le nom
 des fichiers suivra la fenêtre réellement retenue.
+
+Il vit à la racine, au dessus des cas, et non dans le dossier d'un cas : deux
+demandes qui partagent une station ne la rapatrient qu'une fois.
 
 Même rôle que `donnees_vigieau/.sources/` chez le voisin : reconstruire les
 tables sans retélécharger, ce qui compte double ici puisque chaque passage coûte

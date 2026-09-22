@@ -22,7 +22,19 @@ from . import api, schema
 
 logger = logging.getLogger("hydroportail")
 
-DEFAULT_FOLDER = "donnees_hydroportail"
+DEFAULT_ROOT = "donnees_hydroportail"
+
+
+def chemins(cas: str, racine: str | Path = DEFAULT_ROOT) -> tuple[Path, Path]:
+    """Where a case writes its tables, and where every case reads its cache.
+
+    The cache sits at the root, above the cases, on purpose: a station fetched
+    for one demand is never fetched again for the next, and one series window
+    can cost minutes. The tables belong to a single case, because a datapackage
+    describes one dataset and a demand is what gives that dataset its meaning.
+    """
+    racine = Path(racine)
+    return racine / str(cas), racine / ".sources"
 
 
 # --------------------------------------------------------------------------
@@ -65,7 +77,8 @@ def _coverage_rate(first: str, last: str, days: int) -> float | None:
 # --------------------------------------------------------------------------
 
 def inventory(
-    folder: str | Path = DEFAULT_FOLDER,
+    cas: str,
+    racine: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
     write: bool = True,
 ) -> dict[str, pd.DataFrame]:
@@ -81,8 +94,7 @@ def inventory(
     on that station". A third party list cannot be trusted on this point: the
     obvious station of a site may hold water level only.
     """
-    folder = Path(folder)
-    cache = folder / ".sources"
+    folder, cache = chemins(cas, racine)
     codes = [str(code).strip() for code in codes if str(code).strip()]
     if not codes:
         raise ValueError("Aucun code de station demandé.")
@@ -252,7 +264,7 @@ def _write_csv(frame: pd.DataFrame, folder: Path, table: str) -> Path:
     return path
 
 
-def read_tables(folder: str | Path = DEFAULT_FOLDER) -> dict[str, pd.DataFrame]:
+def read_tables(folder: str | Path) -> dict[str, pd.DataFrame]:
     """The reference tables, with the commune and department codes kept as text."""
     folder = Path(folder)
     tables = {}
@@ -270,7 +282,7 @@ def read_tables(folder: str | Path = DEFAULT_FOLDER) -> dict[str, pd.DataFrame]:
 #  Telling the user what came out
 # --------------------------------------------------------------------------
 
-def summary(folder: str | Path = DEFAULT_FOLDER) -> pd.DataFrame:
+def summary(folder: str | Path) -> pd.DataFrame:
     """A readable digest of the inventory, printed after a run."""
     tables = read_tables(folder)
     stations = tables.get("stations")
@@ -427,7 +439,8 @@ def _resolution(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def download(
-    folder: str | Path = DEFAULT_FOLDER,
+    cas: str,
+    racine: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
     statuts: Sequence[str] = api.STATUSES,
     write: bool = True,
@@ -440,12 +453,11 @@ def download(
     expected: raw does live underneath validated periods, and the windows
     accelerate through the empty years by themselves.
     """
-    folder = Path(folder)
-    cache = folder / ".sources"
+    folder, cache = chemins(cas, racine)
     mesures = folder / "mesures"
     unknown = {kind: set() for kind in ("s", "q", "m", "c")}
 
-    tables = inventory(folder, codes, write=False)
+    tables = inventory(cas, racine, codes, write=False)
     stations = tables["stations"]
     working = stations[stations["porte_debit"].astype(bool)]
     logger.info("")
@@ -558,7 +570,7 @@ def _fill_resolution(couverture: pd.DataFrame,
     return merged[schema.columns("couverture")].sort_values(keys).reset_index(drop=True)
 
 
-def read(folder: str | Path = DEFAULT_FOLDER) -> pd.DataFrame:
+def read(folder: str | Path) -> pd.DataFrame:
     """The fact table, every station at once."""
     mesures = Path(folder) / "mesures"
     if not mesures.exists():

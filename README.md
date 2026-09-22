@@ -40,29 +40,40 @@ facultative du `datapackage.json` demande `frictionless` :
 
 ## Télécharger
 
+**Tout part d'un cas.** Un cas est une liste de stations et la raison qui la
+justifie : `ressources/<cas>/stations.txt` porte un code par ligne, et ses
+tables sortiront sous `donnees_hydroportail/<cas>/`. Le dépôt en contient deux,
+`2026-09_jeu-de-test` et `2026-09_eclusees-rmc` ; en créer un est un dossier et
+un fichier texte.
+
 **Commencez toujours par l'inventaire.** Une requête rapide par station, sans
-toucher aux chroniques, qui dit ce que des codes contiennent réellement :
+toucher aux chroniques, qui dit ce que ces codes contiennent réellement :
 
 ```bash
-python download_hydroportail.py --inventaire --stations V720001002 W011001001
+python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
 ```
 
 ```
-V720001002  Le Rhône à Tarascon - DREAL   1994-12-01 à 2026-09-20  11217 j   97 %
-W011001001  L'Isère à Moûtiers            1981-01-01 à 2026-09-20  16684 j  100 %
+10 station(s), dont 8 portant un débit instantané.
+  V271201001  L'Ain à Pont-d'Ain                    1981-01-01 à 2026-09-20  16699 j  100 %
+  V720001002  Le Rhône à Tarascon - DREAL           1994-12-01 à 2026-09-20  11217 j   97 %
+  W107403001  L'Arc à Aiguebelle                    2011-06-02 à 2026-09-14   3264 j   58 %
+  W103000301  L'Arc à Saint-Michel-de-Maurienne [La aucun débit instantané
+  ...
 ```
 
 Puis le téléchargement proprement dit :
 
 ```bash
 # les deux passes, brut et chronique arbitrée par le producteur
-python download_hydroportail.py --stations V720001002
-
-# depuis un fichier de codes, un par ligne
-python download_hydroportail.py --fichier stations_rmc.txt
+python download_hydroportail.py --cas 2026-09_jeu-de-test
 
 # la chronique arbitrée seule : dix fois plus légère, suffit à beaucoup d'usages
-python download_hydroportail.py --fichier stations_rmc.txt --statuts most_valid
+python download_hydroportail.py --cas 2026-09_jeu-de-test --statuts most_valid
+
+# quelques stations hors de tout cas, pour regarder
+python download_hydroportail.py --cas bac-a-sable --inventaire \
+    --stations V720001002 W011001001
 ```
 
 Comptez environ **trois minutes et 6 Mo par station**, pour les deux passes sur
@@ -98,13 +109,20 @@ où elle s'était arrêtée, sans coûter une seule requête pour ce qui est dé
 
 ```
 donnees_hydroportail/
-├── mesures/           un fichier parquet par station, la table de faits
-├── stations.csv       identité et couverture réelle, une ligne par code demandé
-├── couverture.csv     station x année x statut, de quoi choisir ce qu'on analyse
-├── ref_codes.csv      le sens des quatre codes de qualité
-├── datapackage.json   schéma, provenance, empreintes SHA-256
-└── .sources/          cache des réponses reçues, supprimable
+├── .sources/               cache des reponses recues, partage par tous les cas
+├── 2026-09_jeu-de-test/
+│   ├── mesures/            un fichier parquet par station, la table de faits
+│   ├── stations.csv        identite et couverture reelle, une ligne par code
+│   ├── couverture.csv      station x annee x statut, de quoi choisir
+│   ├── ref_codes.csv       le sens des quatre codes de qualite
+│   └── datapackage.json    schema, provenance, empreintes SHA-256
+└── 2026-09_eclusees-rmc/
+    └── ...
 ```
+
+**Un cas, un jeu de données, un datapackage.** Le cache, lui, est commun :
+une station rapatriée pour une demande ne l'est jamais deux fois. C'est aussi
+ce qui rend « j'ai utilisé le jeu `2026-09_eclusees-rmc` en v1.1.0 » exact.
 
 ### `mesures/`, la table de faits
 
@@ -225,11 +243,13 @@ exactement le prix de son fichier.
 ```python
 import pandas as pd
 
+jeu = "donnees_hydroportail/2026-09_jeu-de-test"
+
 # une station : un fichier, qui se lit seul
-serie = pd.read_parquet("donnees_hydroportail/mesures/W011001001.parquet")
+serie = pd.read_parquet(f"{jeu}/mesures/W011001001.parquet")
 
 # toutes les stations : le dossier s'ouvre comme une table unique
-mesures = pd.read_parquet("donnees_hydroportail/mesures/")
+mesures = pd.read_parquet(f"{jeu}/mesures/")
 ```
 
 **La chronique propre**, c'est à dire la donnée telle que le producteur
@@ -263,8 +283,8 @@ paresseuse, qui n'ouvre que les fichiers nécessaires :
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-jeu = ds.dataset("donnees_hydroportail/mesures/", format="parquet")
-serie = jeu.to_table(filter=pc.field("code_station") == "W011001001").to_pandas()
+table = ds.dataset(f"{jeu}/mesures/", format="parquet")
+serie = table.to_table(filter=pc.field("code_station") == "W011001001").to_pandas()
 ```
 
 ## Relire les données en R
@@ -277,11 +297,13 @@ subtilité, et elle vaut d'être connue : appeler `read_parquet` sur le dossier
 library(arrow)
 library(dplyr)
 
+jeu <- "donnees_hydroportail/2026-09_jeu-de-test"
+
 # une station : un fichier
-serie <- read_parquet("donnees_hydroportail/mesures/W011001001.parquet")
+serie <- read_parquet(file.path(jeu, "mesures/W011001001.parquet"))
 
 # toutes les stations : un dataset, qui ne charge rien tant qu'on ne collecte pas
-mesures <- open_dataset("donnees_hydroportail/mesures/")
+mesures <- open_dataset(file.path(jeu, "mesures/"))
 nrow(mesures)
 
 # la chronique propre, arbitree par le producteur
@@ -291,7 +313,7 @@ chronique <- mesures |> filter(most_valid) |> collect()
 extrait <- mesures |> filter(code_station == "W011001001") |> collect()
 
 # les codes de station gardent leurs lettres et leurs zeros
-couverture <- read.csv("donnees_hydroportail/couverture.csv",
+couverture <- read.csv(file.path(jeu, "couverture.csv"),
                        colClasses = c(code_station = "character"))
 ```
 

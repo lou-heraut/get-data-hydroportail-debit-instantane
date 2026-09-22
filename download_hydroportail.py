@@ -15,30 +15,51 @@ import logging
 import sys
 from pathlib import Path
 
-from hydroportail import download, inventory, summary
+from hydroportail import chemins, download, inventory, summary
 from hydroportail.api import APIError
+from hydroportail.download import DEFAULT_ROOT
+
+#: Où vivent les demandes. Un cas porte le même nom des deux côtés : sa liste
+#: de stations ici, ses tables sous donnees_hydroportail/.
+RESSOURCES = Path("ressources")
 
 EXEMPLES = """\
 exemples :
-  # ce que contiennent trois stations, sans rien telecharger de lourd
-  python download_hydroportail.py --inventaire --stations V720001002 W011001001 X031001001
+  # ce que contient un cas, sans rien telecharger de lourd
+  python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
 
-  # la meme chose depuis un fichier, un code par ligne
-  python download_hydroportail.py --inventaire --fichier stations_rmc.txt
-
-  # telecharger les chroniques, les deux passes
-  python download_hydroportail.py --stations V720001002
+  # telecharger ses chroniques, les deux passes
+  python download_hydroportail.py --cas 2026-09_jeu-de-test
 
   # la chronique arbitree par le producteur seule, dix fois plus legere
-  python download_hydroportail.py --fichier stations_rmc.txt --statuts most_valid
+  python download_hydroportail.py --cas 2026-09_eclusees-rmc --statuts most_valid
+
+  # quelques stations hors de tout cas, pour regarder
+  python download_hydroportail.py --cas bac-a-sable --inventaire \\
+      --stations V720001002 W011001001 X031001001
 """
 
 
-def lire_codes(chemin: str) -> list[str]:
+def lire_codes(chemin: str | Path) -> list[str]:
     """Un code par ligne. Les lignes vides et celles commençant par # sont ignorées."""
     lignes = Path(chemin).read_text(encoding="utf-8").splitlines()
     return [ligne.strip() for ligne in lignes
             if ligne.strip() and not ligne.strip().startswith("#")]
+
+
+def codes_du_cas(cas: str) -> list[str]:
+    """Les stations que ce cas demande, dans `ressources/<cas>/stations.txt`.
+
+    C'est le seul contrat entre une demande et le téléchargement. Peu importe
+    par quel chemin la liste est arrivée, tableur traduit ou dix codes écrits à
+    la main : ici, c'est un code par ligne.
+    """
+    chemin = RESSOURCES / cas / "stations.txt"
+    if not chemin.exists():
+        raise FileNotFoundError(
+            f"{chemin} : ce cas n'a pas de liste de stations. Donnez-en une avec "
+            "--stations ou --fichier, ou écrivez ce fichier.")
+    return lire_codes(chemin)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,15 +68,19 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXEMPLES,
     )
-    parser.add_argument(
-        "dossier", nargs="?", default="donnees_hydroportail",
-        help="dossier de destination (défaut : donnees_hydroportail)")
+    parser.add_argument("--cas", required=True, metavar="NOM",
+                        help="nom du cas, ex. 2026-09_eclusees-rmc. Ses stations "
+                             f"sont lues dans {RESSOURCES}/<cas>/stations.txt et "
+                             "ses tables écrites sous <racine>/<cas>/")
+    parser.add_argument("--racine", default=DEFAULT_ROOT, metavar="CHEMIN",
+                        help=f"racine des données (défaut : {DEFAULT_ROOT}). Le "
+                             "cache des réponses y est partagé par tous les cas")
 
     groupe = parser.add_argument_group("quelles stations")
     groupe.add_argument("--stations", nargs="+", metavar="CODE",
-                        help="codes Sandre de station, ex. --stations V720001002")
+                        help="codes Sandre de station, au lieu de ceux du cas")
     groupe.add_argument("--fichier", metavar="CHEMIN",
-                        help="fichier de codes, un par ligne")
+                        help="fichier de codes, un par ligne, au lieu de ceux du cas")
 
     groupe = parser.add_argument_group("comment")
     groupe.add_argument("--inventaire", action="store_true",
@@ -84,17 +109,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.fichier:
         codes += lire_codes(args.fichier)
     if not codes:
-        parser.error("indiquez des stations avec --stations ou --fichier")
+        codes = codes_du_cas(args.cas)
     passes = {"les-deux": ("raw", "most_valid"),
               "raw": ("raw",), "most_valid": ("most_valid",)}[args.statuts]
 
     try:
         if args.inventaire:
-            inventory(folder=args.dossier, codes=codes)
+            inventory(args.cas, args.racine, codes=codes)
         else:
-            download(folder=args.dossier, codes=codes, statuts=passes)
+            download(args.cas, args.racine, codes=codes, statuts=passes)
         if not args.silencieux:
-            summary(args.dossier)
+            summary(chemins(args.cas, args.racine)[0])
         return 0
     except (APIError, ValueError, FileNotFoundError) as erreur:
         print(f"\nErreur : {erreur}", file=sys.stderr)

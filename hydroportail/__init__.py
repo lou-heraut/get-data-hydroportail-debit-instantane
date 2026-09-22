@@ -13,11 +13,12 @@ Typical use, once the download layer exists:
 
     from hydroportail import download, read
 
-    download("donnees_hydroportail", codes=["V720001002"])
-    df = read("donnees_hydroportail")
+    download("2026-09_jeu-de-test", codes=["V720001002"])
+    df = read("donnees_hydroportail/2026-09_jeu-de-test")
 """
 
-from .download import download, inventory, read, read_tables, summary
+from .download import chemins, download, inventory, read, read_tables, summary
 from .schema import SCRIPT_VERSION as __version__
 
-__all__ = ["download", "inventory", "read", "read_tables", "summary", "__version__"]
+__all__ = ["chemins", "download", "inventory", "read", "read_tables", "summary",
+           "__version__"]

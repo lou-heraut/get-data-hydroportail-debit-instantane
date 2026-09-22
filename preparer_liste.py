@@ -41,8 +41,8 @@ from typing import Any, Sequence
 
 import pandas as pd
 
-from hydroportail import api
-from hydroportail.download import DEFAULT_FOLDER
+from hydroportail import api, chemins
+from hydroportail.download import DEFAULT_ROOT
 
 logger = logging.getLogger("preparation")
 
@@ -54,6 +54,7 @@ CAS = "2026-09_eclusees-rmc"
 TABLEUR = "liste-recue.xlsx"
 SORTIE = "stations-demandees.csv"
 ARBITRAGES = "arbitrages.csv"
+RETENUES = "stations.txt"
 
 #: Le vocabulaire de la colonne `cas` d'arbitrages.csv. Court et tenu : il sert
 #: à un lecteur pressé qui cherche si sa situation ressemble à une des nôtres.
@@ -328,13 +329,13 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
     return " ; ".join(motifs)
 
 
-def preparer(cas: str = CAS, dossier: str = DEFAULT_FOLDER) -> pd.DataFrame:
+def preparer(cas: str = CAS, racine: str = DEFAULT_ROOT) -> pd.DataFrame:
     """Du tableur reçu à la table de correspondance, en trois passes."""
     demande = RESSOURCES / cas
     if not demande.is_dir():
         raise FileNotFoundError(f"{demande} : ce dossier de demande n'existe pas.")
     sortie = demande / SORTIE
-    cache = Path(dossier) / ".sources"
+    _, cache = chemins(cas, racine)
     lignes = lire_tableur(demande / TABLEUR)
     choisies = lire_arbitrages(demande / ARBITRAGES)
     if choisies:
@@ -433,6 +434,13 @@ def preparer(cas: str = CAS, dossier: str = DEFAULT_FOLDER) -> pd.DataFrame:
     sortie.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(sortie, index=False, encoding="utf-8")
     logger.info("Écrit %s (%d lignes).", sortie, len(table))
+
+    # Le contrat entre la demande et le téléchargement : un code par ligne, et
+    # rien d'autre. Le téléchargeur n'a pas à savoir par quel chemin la liste
+    # est arrivée.
+    retenues = sorted({code for code in table["code_station"] if code})
+    (demande / RETENUES).write_text("\n".join(retenues) + "\n", encoding="utf-8")
+    logger.info("Écrit %s (%d stations).", demande / RETENUES, len(retenues))
     return table
 
 
@@ -458,14 +466,14 @@ def main(argv: list[str] | None = None) -> int:
         description="Met au propre la liste de stations reçue et la confronte au service.")
     parser.add_argument("--cas", default=CAS,
                         help=f"sous-dossier de {RESSOURCES} (défaut : {CAS})")
-    parser.add_argument("-d", "--dossier", default=DEFAULT_FOLDER,
-                        help="dossier du cache des réponses "
-                             f"(défaut : {DEFAULT_FOLDER})")
+    parser.add_argument("--racine", default=DEFAULT_ROOT, metavar="CHEMIN",
+                        help=f"racine des données (défaut : {DEFAULT_ROOT}), où "
+                             "vit le cache des réponses partagé par les cas")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     try:
-        table = preparer(args.cas, args.dossier)
+        table = preparer(args.cas, args.racine)
     except (ValueError, FileNotFoundError, api.APIError) as erreur:
         print(f"\nErreur : {erreur}", file=sys.stderr)
         return 1

@@ -12,11 +12,12 @@ qu'elles portent sur des données réelles et non sur des fonctions :
    est le pari sur lequel repose le choix de ne télécharger que deux passes ;
 4. aucun code de qualité n'a échappé à la nomenclature figée.
 
-Usage : python verifier_hydroportail.py [dossier]
+Usage : python verifier_hydroportail.py --cas 2026-09_jeu-de-test
 """
 
 from __future__ import annotations
 
+import argparse
 import gzip
 import json
 import logging
@@ -27,7 +28,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from hydroportail import api
+from hydroportail import api, chemins
+from hydroportail.download import DEFAULT_ROOT
 
 logger = logging.getLogger("verification")
 
@@ -51,10 +53,10 @@ def _points_du_cache(cache: Path, code: str) -> pd.DataFrame:
     return pd.DataFrame(lignes, columns=["t", "v", "s", "q", "m", "c"])
 
 
-def verifier_non_perte(dossier: Path) -> bool:
+def verifier_non_perte(dossier: Path, cache: Path) -> bool:
     """Tout point servi se retrouve dans mesures/, et rien n'y a été inventé."""
     logger.info("1. Non-perte entre le cache et les mesures")
-    cache, mesures = dossier / ".sources", dossier / "mesures"
+    mesures = dossier / "mesures"
     intact = True
 
     for fichier in sorted(mesures.glob("*.parquet")):
@@ -145,7 +147,8 @@ def verifier_recoupement_hubeau(dossier: Path, code: str = "V720001002") -> bool
     return True
 
 
-def verifier_inclusion_statuts(dossier: Path, codes: list[str] | None = None) -> bool:
+def verifier_inclusion_statuts(dossier: Path, cache: Path,
+                               codes: list[str] | None = None) -> bool:
     """most_valid contient-elle toujours pre_validated_and_validated.
 
     C'est le pari qui autorise à ne télécharger que deux passes. Il a été
@@ -154,7 +157,6 @@ def verifier_inclusion_statuts(dossier: Path, codes: list[str] | None = None) ->
     casse un jour, on l'apprend ici et non au milieu d'une analyse.
     """
     logger.info("3. Inclusion de pre_validated_and_validated dans most_valid")
-    cache = dossier / ".sources"
     stations = pd.read_csv(dossier / "stations.csv", dtype={"code_station": "string"})
     porteuses = stations[stations["porte_debit"].astype(bool)]["code_station"].tolist()
     codes = codes or porteuses[:3]
@@ -224,8 +226,14 @@ def verifier_integrite(dossier: Path) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    argv = argv if argv is not None else sys.argv[1:]
-    dossier = Path(argv[0] if argv else "donnees_hydroportail")
+    parser = argparse.ArgumentParser(
+        description="Contrôle le jeu produit par un cas.")
+    parser.add_argument("--cas", required=True, metavar="NOM",
+                        help="nom du cas à contrôler, ex. 2026-09_jeu-de-test")
+    parser.add_argument("--racine", default=DEFAULT_ROOT, metavar="CHEMIN",
+                        help=f"racine des données (défaut : {DEFAULT_ROOT})")
+    args = parser.parse_args(argv)
+    dossier, cache = chemins(args.cas, args.racine)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if not (dossier / "stations.csv").exists():
@@ -233,9 +241,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     resultats = [
-        verifier_non_perte(dossier),
+        verifier_non_perte(dossier, cache),
         verifier_recoupement_hubeau(dossier),
-        verifier_inclusion_statuts(dossier),
+        verifier_inclusion_statuts(dossier, cache),
         verifier_codes(dossier),
         verifier_integrite(dossier),
     ]

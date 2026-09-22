@@ -48,18 +48,29 @@ Une phrase chacun, et c'est ce qui décide où une information doit aller :
 Si une information ne rentre dans aucun des six, c'est probablement qu'elle
 appartient à un commentaire dans le code ou à un message de commit.
 
-### Les demandes, un dossier par cas
+### Les cas, un dossier chacun
 
-`ressources/` garde la trace des demandes reçues : un sous-dossier par cas,
-nommé `aaaa-mm_sujet` pour qu'un simple listing soit trié par ordre d'arrivée. À
-l'intérieur les noms ne portent pas de date, puisque le dossier la porte.
+**Un cas est une liste de stations et la raison qui la justifie.** Le plus
+souvent une demande reçue, parfois un jeu qu'on s'est donné, comme le jeu de
+test. Il porte le même nom des deux côtés : `ressources/<cas>/` dit ce qu'on
+veut, `donnees_hydroportail/<cas>/` porte ce qu'on a obtenu. C'est ce qui trace
+le chemin de la demande au résultat, et ce qui donne à chaque petit jeu son
+datapackage et sa version.
+
+Le nom est `aaaa-mm_sujet`, pour qu'un simple listing soit trié par ordre
+d'arrivée. À l'intérieur les noms ne portent pas de date, puisque le dossier la
+porte.
 
 | fichier | ce qu'il est |
 |---|---|
 | `README.md` | le besoin en deux phrases, et ce que contient le dossier |
+| `stations.txt` | **le contrat** : un code par ligne, ce que le téléchargement lira |
 | `liste-recue.*` | ce que le demandeur a transmis, jamais retouché |
 | `stations-demandees.csv` | ce que `preparer_liste.py` en tire |
 | `arbitrages.csv` | les choix que le script ne peut pas faire seul |
+
+Seuls `README.md` et `stations.txt` sont obligatoires : un cas qu'on se donne
+soi-même n'a ni liste reçue, ni traduction, ni arbitrage.
 
 **Ce qui est vrai pour cette demande reste ici ; ce qui est vrai en soi monte
 dans `SOURCE.md`.** Qu'un producteur déclare une de ses stations défaillante est
@@ -220,9 +231,10 @@ Debian/Ubuntu bloque `pip install` en système (PEP 668). Le venv du projet sera
 source .python_env/bin/activate
 ```
 
-`donnees_hydroportail/` sera ignoré par git : les données se régénèrent. Le
-sous-dossier `donnees_hydroportail/.sources/` est le cache des réponses reçues,
-supprimable au prix d'un retéléchargement.
+`donnees_hydroportail/` est ignoré par git : les données se régénèrent. Un
+sous-dossier par cas y porte les tables, et `donnees_hydroportail/.sources/` le
+cache des réponses reçues, commun à tous les cas et supprimable au prix d'un
+retéléchargement.
 
 ## Pièges à ne pas « corriger »
 
@@ -278,10 +290,12 @@ Dans cet ordre, du plus rapide au plus long :
 ```bash
 source .python_env/bin/activate
 pytest                                          # les fonctions pures, instantane
-python download_hydroportail.py --inventaire --stations \
-  W011001001 W283201001 V271201001 V720001002 X031001001 \
-  Y532501001 W107403003 W107403001 W103000301 V031661301
+python download_hydroportail.py --cas 2026-09_jeu-de-test --inventaire
 ```
+
+Les dix codes ne sont pas recopiés ici : ils sont dans
+`ressources/2026-09_jeu-de-test/stations.txt`, et ce que chacun illustre dans
+[SOURCE.md](SOURCE.md).
 
 Attendu sur ces dix stations, et **en croissance d'un jour par jour** pour
 celles qui sont en service :
@@ -312,8 +326,8 @@ couverture.csv : 343 lignes, statuts {4: 113, 8: 10, 12: 29, 16: 191}
 Puis les contrôles, qui doivent tous passer :
 
 ```bash
-python verifier_hydroportail.py
-python -c "from frictionless import Package; print(Package('donnees_hydroportail/datapackage.json').validate().valid)"
+python verifier_hydroportail.py --cas 2026-09_jeu-de-test
+python -c "from frictionless import Package; print(Package('donnees_hydroportail/2026-09_jeu-de-test/datapackage.json').validate().valid)"
 ```
 
 ```
