@@ -30,8 +30,8 @@ status: ## Résumé en dix lignes : téléchargement, avancement, poids, dépôt
 	@git status -sb | head -3
 
 running: ## Dit si un téléchargement est en cours pour ce cas
-	@if pgrep -f "python download_hydroportail\.py --case $(CASE)$$" > /dev/null; then \
-		echo "$(GREEN)Téléchargement en cours$(NC) (pid $$(pgrep -f "python download_hydroportail\.py --case $(CASE)$$" | head -1))"; \
+	@if pgrep -f "^\S*python download_hydroportail\.py --case $(CASE)\b" > /dev/null; then \
+		echo "$(GREEN)Téléchargement en cours$(NC) (pid $$(pgrep -f "^\S*python download_hydroportail\.py --case $(CASE)\b" | head -1))"; \
 	else \
 		echo "$(YELLOW)Aucun téléchargement en cours$(NC)"; \
 	fi
@@ -47,7 +47,7 @@ progress: ## Où en est le téléchargement, et ce qui est déjà sur disque
 	fi
 	@echo "  fichiers écrits : $$(ls $(ROOT)/$(CASE)/measurements/*.parquet 2>/dev/null | wc -l)"
 	@echo "  poids sur disque : $$(du -sh $(ROOT)/$(CASE) 2>/dev/null | cut -f1)"
-	@echo "  cache partagé : $$(du -sh $(ROOT)/.sources 2>/dev/null | cut -f1)"
+	@echo "  cache partagé : $$(du -sh $(ROOT)/.cache 2>/dev/null | cut -f1)"
 
 watch: ## Suit le journal en direct (Ctrl-C pour sortir, le téléchargement continue)
 	@tail -f $(LOG)
@@ -61,7 +61,7 @@ inventory: ## Ce que le cas contient, sans télécharger de chronique
 	$(PY) download_hydroportail.py --case $(CASE) --root $(ROOT) --inventory
 
 download: ## Lance le téléchargement, détaché de ce terminal
-	@if pgrep -f "python download_hydroportail\.py --case $(CASE)$$" > /dev/null; then \
+	@if pgrep -f "^\S*python download_hydroportail\.py --case $(CASE)\b" > /dev/null; then \
 		echo "Déjà en cours, rien à faire."; exit 1; \
 	fi
 	@echo "" >> $(LOG)
@@ -71,7 +71,7 @@ download: ## Lance le téléchargement, détaché de ce terminal
 	sleep 2; echo "Lancé. Journal : $(LOG), suivi : make watch"
 
 stop: ## Arrête le téléchargement ; le cache garde ce qui est déjà reçu
-	@pkill -f "python download_hydroportail\.py --case $(CASE)$$" \
+	@pkill -f "^\S*python download_hydroportail\.py --case $(CASE)\b" \
 		&& echo "Arrêté. Relancer ne recoûtera rien de ce qui est en cache." \
 		|| echo "Rien à arrêter."
 
