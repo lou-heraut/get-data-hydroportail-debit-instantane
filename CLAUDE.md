@@ -155,11 +155,11 @@ en fin de [ROADMAP.md](ROADMAP.md).
 
 La liste des stations est arrivée le 22 septembre 2026, avec la précision du pas
 de temps attendu. Ses 51 codes, dont 45 codes de site, sont normalisés et
-traduits en codes de station par `preparer_liste.py`, dans le dossier de
-demande `ressources/2026-09_eclusees-rmc/`. Le chantier courant est de trancher les lignes que ce
-fichier signale, puis d'inventorier. Restent ouverts, et **pas à trancher
-seul**, les arbitrages de l'outil de rééchantillonnage, qui est ce que la
-demande d'origine réclamait vraiment. Tout est décrit dans
+traduits en codes de station par `preparer_liste.py`, dans le dossier de demande
+`ressources/2026-09_eclusees-rmc/`. Le chantier courant est de trancher les
+lignes que ce fichier signale, puis d'inventorier. Restent ouverts, et **pas à
+trancher seul**, les arbitrages de l'outil de rééchantillonnage, qui est ce que
+la demande d'origine réclamait vraiment. Tout est décrit dans
 [ROADMAP.md](ROADMAP.md).
 
 ## Contexte

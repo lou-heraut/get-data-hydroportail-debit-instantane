@@ -84,7 +84,7 @@ sien. Cinq points demandent un arbitrage qui n'est pas technique :
 `QmnH`, le débit moyen horaire, reste à écarter pour ce sujet : une moyenne
 lisse précisément les montées et descentes qui font l'éclusée.
 
-### Les deux questions à poser au demandeur
+### Les deux questions à poser à l'équipe demandeuse
 
 Elles conditionnent l'outil et ne se tranchent pas ici :
 
@@ -104,9 +104,9 @@ argumentée plutôt que de question ouverte.
 Tout tient dans `ressources/2026-09_eclusees-rmc/`, dont le `README.md` dit le
 besoin : la liste telle qu'elle a été reçue, et ce que `preparer_liste.py` en
 tire, 51 codes normalisés, traduits en codes de station et confrontés au
-service, avec pour chacun comment il a été résolu et ce qui reste douteux. Ce que la traduction
-a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce qu'une liste réelle
-a donné ».
+service, avec pour chacun comment il a été résolu et ce qui reste douteux. Ce
+que la traduction a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce
+qu'une liste réelle a donné ».
 
 Les choix que le script ne peut pas faire seul vivent dans l'`arbitrages.csv`
 du dossier, avec leur motif et leur type, plutôt que dans le CSV produit, qui se
@@ -120,15 +120,15 @@ script faisait pour les trois stations CNR du Rhône qui ne publient rien.
 
 Ce qui reste à faire :
 
-1. **Poser les quatre codes sans station au demandeur.** Deux sont des absences
-   établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne portent
-   aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet et le
-   Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une de
-   leurs stations, et une station non sondée ne prouve rien.
+1. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des
+   absences établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne
+   portent aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet
+   et le Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une
+   de leurs stations, et une station non sondée ne prouve rien.
 2. **Inventorier** les stations retenues, une requête de deux secondes chacune,
    sans télécharger de chronique.
-3. **Rendre `couverture.csv` au demandeur** pour qu'il choisisse ses stations et
-   sa période avant qu'on engage les heures de téléchargement.
+3. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses
+   stations et sa période avant qu'on engage les heures de téléchargement.
 
 Les dix-neuf lignes encore signalées le sont pour information et non pour
 décision : un site porte plusieurs stations dont une seule s'appelle comme lui,
