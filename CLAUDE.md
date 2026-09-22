@@ -155,10 +155,11 @@ attendre qu'on le demande :
 
 ## État
 
-**v1.1.0 livrée le 22 septembre 2026**, taguée et poussée. L'outil télécharge,
+**v2.0.0 livrée le 22 septembre 2026**, taguée et poussée. L'outil télécharge,
 inventorie, écrit son datapackage et se contrôle lui-même, et ce qu'il produit
 est découpé en cas. Ce que chaque version apporte est dans
-[CHANGELOG.md](CHANGELOG.md).
+[CHANGELOG.md](CHANGELOG.md). La v2.0.0 n'ajoute aucune fonction : elle applique
+la règle de langue, et tout chemin ou commande écrit avant elle est à reprendre.
 
 Deux cas existent. `2026-09_test-set`, les dix stations qui couvrent les cas
 limites, est téléchargé en entier et ses cinq contrôles passent : c'est sur lui
