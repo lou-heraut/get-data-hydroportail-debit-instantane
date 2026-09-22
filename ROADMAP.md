@@ -20,15 +20,10 @@ côté serveur, `Qln` avec un pas choisi ; la mesure montre qu'elle perd 78 % de
 points de rupture de la série validée, donc qu'elle dégrade la donnée au lieu de
 la servir. Cette voie est fermée.
 
-### Ce que le courriel du 22 septembre précise
+### Ce que la demande a précisé le 22 septembre
 
-Reçu avec la liste des stations :
-
-> Pour les pas de temps, une autre étude a utilisé un pas de temps de 15 minutes
-> mais si ce n'est pas possible ça peut être plus long (jusqu'à une heure),
-> l'essentiel étant qu'il soit toujours le même pour chaque station.
-
-Trois choses en sortent :
+Le pas visé est de quinze minutes ; une heure au plus si ce n'est pas possible ;
+et surtout le même pas d'un bout à l'autre. Trois choses en sortent :
 
 - **Une cible, 15 minutes, et un plafond, une heure.** La fourchette d'avant,
   « une heure ou moins », devient un ordre de préférence.
@@ -89,7 +84,7 @@ sien. Cinq points demandent un arbitrage qui n'est pas technique :
 `QmnH`, le débit moyen horaire, reste à écarter pour ce sujet : une moyenne
 lisse précisément les montées et descentes qui font l'éclusée.
 
-### Les deux questions à poser à l'équipe demandeuse
+### Les deux questions à poser au demandeur
 
 Elles conditionnent l'outil et ne se tranchent pas ici :
 
@@ -106,16 +101,16 @@ argumentée plutôt que de question ouverte.
 
 ### La liste des stations, reçue le 22 septembre 2026
 
-Le fichier tel qu'il a été reçu est dans `ressources/liste-recue_2026-09-22.xlsx`,
-et `preparer_liste.py` en tire `ressources/stations-demandees_2026-09-22.csv` :
-51 codes normalisés, traduits en codes de station et confrontés au service, avec
-pour chacun comment il a été résolu et ce qui reste douteux. Ce que la traduction
+Tout tient dans `ressources/2026-09_eclusees-rmc/`, dont le `README.md` dit le
+besoin : la liste telle qu'elle a été reçue, et ce que `preparer_liste.py` en
+tire, 51 codes normalisés, traduits en codes de station et confrontés au
+service, avec pour chacun comment il a été résolu et ce qui reste douteux. Ce que la traduction
 a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce qu'une liste réelle
 a donné ».
 
-Les choix que le script ne peut pas faire seul vivent dans
-`ressources/arbitrages_2026-09-22.csv`, avec leur motif, plutôt que dans le CSV
-produit, qui se réécrit à chaque passage. Trois ont été tranchés, et la règle
+Les choix que le script ne peut pas faire seul vivent dans l'`arbitrages.csv`
+du dossier, avec leur motif et leur type, plutôt que dans le CSV produit, qui se
+réécrit à chaque passage. Trois ont été tranchés, et la règle
 qui s'en dégage vaut pour la suite : **c'est la donnée qui prime sur
 l'exploitant demandé.** Quand la station nommée ne publie pas d'instantané et
 qu'une autre du même point en publie, on prend celle qui en publie et on le
@@ -125,15 +120,15 @@ script faisait pour les trois stations CNR du Rhône qui ne publient rien.
 
 Ce qui reste à faire :
 
-1. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des absences
+1. **Poser les quatre codes sans station au demandeur.** Deux sont des absences
    établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne portent
    aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet et le
    Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une de
    leurs stations, et une station non sondée ne prouve rien.
 2. **Inventorier** les stations retenues, une requête de deux secondes chacune,
    sans télécharger de chronique.
-3. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses stations et sa
-   période avant qu'on engage les heures de téléchargement.
+3. **Rendre `couverture.csv` au demandeur** pour qu'il choisisse ses stations et
+   sa période avant qu'on engage les heures de téléchargement.
 
 Les dix-neuf lignes encore signalées le sont pour information et non pour
 décision : un site porte plusieurs stations dont une seule s'appelle comme lui,

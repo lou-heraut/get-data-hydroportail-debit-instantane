@@ -23,7 +23,7 @@ station a été retenue et pourquoi, et signale ce qui demande un regard humain.
 Cette table se relit et se corrige à la main : c'est elle qu'on donnera ensuite
 à `--fichier`, jamais le tableur.
 
-Usage : python preparer_liste.py [tableur] [-s sortie]
+Usage : python preparer_liste.py [--cas 2026-09_eclusees-rmc]
 """
 
 from __future__ import annotations
@@ -46,10 +46,18 @@ from hydroportail.download import DEFAULT_FOLDER
 
 logger = logging.getLogger("preparation")
 
+#: Un sous-dossier par demande, nommé `aaaa-mm_sujet`, et à l'intérieur des noms
+#: fixes : le dossier porte la date, les fichiers portent leur rôle. La
+#: convention et ce qui va où sont dans CLAUDE.md.
 RESSOURCES = Path("ressources")
-TABLEUR = RESSOURCES / "liste-recue_2026-09-22.xlsx"
-SORTIE = RESSOURCES / "stations-demandees_2026-09-22.csv"
-ARBITRAGES = RESSOURCES / "arbitrages_2026-09-22.csv"
+CAS = "2026-09_eclusees-rmc"
+TABLEUR = "liste-recue.xlsx"
+SORTIE = "stations-demandees.csv"
+ARBITRAGES = "arbitrages.csv"
+
+#: Le vocabulaire de la colonne `cas` d'arbitrages.csv. Court et tenu : il sert
+#: à un lecteur pressé qui cherche si sa situation ressemble à une des nôtres.
+CAS_ARBITRAGE = ("remplacement", "deux-exploitants", "qualite-declaree")
 
 #: Espace de nommage du format xlsx, qui n'est qu'un zip de XML.
 _XL = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -141,7 +149,7 @@ def lire_tableur(chemin: Path) -> list[dict[str, str]]:
     return lignes
 
 
-def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str]]:
+def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str, str]]:
     """Les choix faits à la main, par code demandé, avec leur motif.
 
     Le script ne sait trancher qu'au libellé, et le libellé d'une liste désigne
@@ -153,10 +161,15 @@ def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str]]:
     if not chemin.exists():
         return {}
     table = pd.read_csv(chemin, dtype=str).fillna("")
-    manquantes = {"code_demande", "code_station", "motif"} - set(table.columns)
+    manquantes = {"code_demande", "code_station", "cas", "motif"} - set(table.columns)
     if manquantes:
         raise ValueError(f"{chemin} : colonnes absentes, {', '.join(sorted(manquantes))}.")
-    return {ligne.code_demande.strip(): (ligne.code_station.strip(), ligne.motif.strip())
+    inconnus = sorted(set(table["cas"].str.strip()) - set(CAS_ARBITRAGE))
+    if inconnus:
+        raise ValueError(f"{chemin} : cas inconnu(s), {', '.join(inconnus)}. "
+                         f"Le vocabulaire est {', '.join(CAS_ARBITRAGE)}.")
+    return {ligne.code_demande.strip(): (ligne.code_station.strip(),
+                                         ligne.cas.strip(), ligne.motif.strip())
             for ligne in table.itertuples() if ligne.code_demande.strip()}
 
 
@@ -315,14 +328,17 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
     return " ; ".join(motifs)
 
 
-def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER,
-             arbitrages: Path = ARBITRAGES) -> pd.DataFrame:
+def preparer(cas: str = CAS, dossier: str = DEFAULT_FOLDER) -> pd.DataFrame:
     """Du tableur reçu à la table de correspondance, en trois passes."""
+    demande = RESSOURCES / cas
+    if not demande.is_dir():
+        raise FileNotFoundError(f"{demande} : ce dossier de demande n'existe pas.")
+    sortie = demande / SORTIE
     cache = Path(dossier) / ".sources"
-    lignes = lire_tableur(tableur)
-    choisies = lire_arbitrages(arbitrages)
+    lignes = lire_tableur(demande / TABLEUR)
+    choisies = lire_arbitrages(demande / ARBITRAGES)
     if choisies:
-        logger.info("%d arbitrage(s) lu(s) dans %s.", len(choisies), arbitrages)
+        logger.info("%d arbitrage(s) lu(s) dans %s.", len(choisies), demande / ARBITRAGES)
     logger.info("Tableur lu : %d ligne(s).", len(lignes))
 
     for ligne in lignes:
@@ -356,7 +372,7 @@ def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER,
     # la rattache pas au site demandé : le choix humain n'a pas à se justifier
     # auprès du script, mais sa couverture doit figurer dans la table.
     a_sonder = sorted({code for liste in candidates.values() for code in liste}
-                      | {code for code, _ in choisies.values() if code})
+                      | {code for code, _, _ in choisies.values() if code})
     logger.info("HydroPortail : %d station(s) candidates à sonder, "
                 "une requête rapide chacune.", len(a_sonder))
 
@@ -387,8 +403,8 @@ def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER,
         retenue, choix = _retenir(ligne, candidates[code], jours, records, non_servies)
         arbitre = code in choisies
         if arbitre:
-            retenue, motif = choisies[code]
-            choix = f"arbitré à la main : {motif}"
+            retenue, cas_arbitrage, motif = choisies[code]
+            choix = f"arbitré à la main, {cas_arbitrage} : {motif}"
         record = records.get(retenue, {}) if retenue else {}
         debut, fin, nombre = etendues.get(retenue, ("", "", 0))
         ligne.update({
@@ -440,12 +456,8 @@ def resume(table: pd.DataFrame) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Met au propre la liste de stations reçue et la confronte au service.")
-    parser.add_argument("tableur", nargs="?", default=str(TABLEUR),
-                        help=f"tableur reçu (défaut : {TABLEUR})")
-    parser.add_argument("-s", "--sortie", default=str(SORTIE),
-                        help=f"table de correspondance à écrire (défaut : {SORTIE})")
-    parser.add_argument("-a", "--arbitrages", default=str(ARBITRAGES),
-                        help=f"choix faits à la main (défaut : {ARBITRAGES})")
+    parser.add_argument("--cas", default=CAS,
+                        help=f"sous-dossier de {RESSOURCES} (défaut : {CAS})")
     parser.add_argument("-d", "--dossier", default=DEFAULT_FOLDER,
                         help="dossier du cache des réponses "
                              f"(défaut : {DEFAULT_FOLDER})")
@@ -453,8 +465,7 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     try:
-        table = preparer(Path(args.tableur), Path(args.sortie), args.dossier,
-                         Path(args.arbitrages))
+        table = preparer(args.cas, args.dossier)
     except (ValueError, FileNotFoundError, api.APIError) as erreur:
         print(f"\nErreur : {erreur}", file=sys.stderr)
         return 1

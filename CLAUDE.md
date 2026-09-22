@@ -48,6 +48,40 @@ Une phrase chacun, et c'est ce qui décide où une information doit aller :
 Si une information ne rentre dans aucun des six, c'est probablement qu'elle
 appartient à un commentaire dans le code ou à un message de commit.
 
+### Les demandes, un dossier par cas
+
+`ressources/` garde la trace des demandes reçues : un sous-dossier par cas,
+nommé `aaaa-mm_sujet` pour qu'un simple listing soit trié par ordre d'arrivée. À
+l'intérieur les noms ne portent pas de date, puisque le dossier la porte.
+
+| fichier | ce qu'il est |
+|---|---|
+| `README.md` | le besoin en deux phrases, et ce que contient le dossier |
+| `liste-recue.*` | ce que le demandeur a transmis, jamais retouché |
+| `stations-demandees.csv` | ce que `preparer_liste.py` en tire |
+| `arbitrages.csv` | les choix que le script ne peut pas faire seul |
+
+**Ce qui est vrai pour cette demande reste ici ; ce qui est vrai en soi monte
+dans `SOURCE.md`.** Qu'un producteur déclare une de ses stations défaillante est
+un fait, il vaut pour tout le monde et se mesure une fois. Que l'on préfère pour
+autant la chronique longue à la station neuve est une décision propre à une
+étude, et elle vit dans son `arbitrages.csv`, avec son motif, parce que la
+même situation se trancherait autrement pour une autre question.
+
+**Aucune information personnelle dans ces fichiers**, ni nom, ni adresse, ni
+citation de courriel : le dépôt est public, et un besoin s'énonce sans cela.
+
+La colonne `cas` d'`arbitrages.csv` prend une valeur d'un vocabulaire court, qui
+dit à qui arrive avec sa propre liste s'il est dans une situation connue. Le
+script refuse une valeur hors de cette liste, sans quoi le vocabulaire dériverait
+en champ libre :
+
+| valeur | situation |
+|---|---|
+| `remplacement` | une station en remplace une autre au même point, et les deux publient un temps |
+| `deux-exploitants` | deux stations à la même section, chacune sa courbe de tarage, donc des débits différents |
+| `qualite-declaree` | le producteur signale lui-même une des stations comme défaillante |
+
 ### La roadmap ne s'accumule jamais
 
 Un fichier qui ne fait que grossir est un journal, pas une feuille de route, et
@@ -121,8 +155,8 @@ en fin de [ROADMAP.md](ROADMAP.md).
 
 La liste des stations est arrivée le 22 septembre 2026, avec la précision du pas
 de temps attendu. Ses 51 codes, dont 45 codes de site, sont normalisés et
-traduits en codes de station dans `ressources/stations-demandees_2026-09-22.csv`
-par `preparer_liste.py`. Le chantier courant est de trancher les lignes que ce
+traduits en codes de station par `preparer_liste.py`, dans le dossier de
+demande `ressources/2026-09_eclusees-rmc/`. Le chantier courant est de trancher les lignes que ce
 fichier signale, puis d'inventorier. Restent ouverts, et **pas à trancher
 seul**, les arbitrages de l'outil de rééchantillonnage, qui est ce que la
 demande d'origine réclamait vraiment. Tout est décrit dans

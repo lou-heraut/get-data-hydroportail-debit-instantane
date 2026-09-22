@@ -1,0 +1,4 @@
+code_demande,code_station,cas,motif
+Y5534030,Y553403001,remplacement,"la station de remplacement n'a ouvert qu'en septembre 2025 et ne porte que 224 jours ; la chronique longue, 1970 à 2026, compte davantage pour l'étude"
+W3340001,W334000102,deux-exploitants,"la station EDF demandée ne publie que 64 jours d'instantané ; celle de la DREAL en publie 3 241, continus de 2003 à 2020, et c'est la donnée qui prime sur l'exploitant"
+X2811210,X281121002,qualite-declaree,"le producteur déclare douteuses toutes les hauteurs de X281121001, capteur sous le pont routier, et a installé celle-ci 20 m en amont en septembre 2020 pour cette raison"
