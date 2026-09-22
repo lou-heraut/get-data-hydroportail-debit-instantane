@@ -342,6 +342,37 @@ Conséquence pour le code : **un 500 veut dire « ma fenêtre est trop large »,
 « le serveur est en panne »**. Y répondre par un recul exponentiel et cinq
 tentatives ferait replanter le service cinq fois.
 
+### Le 500 qui ne parle pas de la fenêtre
+
+Mesuré le 22 septembre 2026 sur `V126002001`, le Rhône à Ruffieux, rencontré en
+préparant la liste demandée. Le service répond 500 quoi qu'on lui demande :
+
+```
+QIXnJ most_valid, annee 2020        500
+QIXnJ most_valid, janvier 2024      500
+Q     most_valid, deux jours        500
+fiche d'identite de la station      200
+V126002002, code inexistant         404
+```
+
+Le corps est la page d'erreur générique du site, « Une erreur est survenue,
+l'application a rencontré une erreur », et non un message sur la fenêtre. Trois
+choses en découlent :
+
+- **Un 500 ne dit pas toujours « fenêtre trop large ».** La falaise mesurée plus
+  haut reste vraie, elle n'est simplement pas la seule cause possible.
+- **Un code inexistant répond 404**, donc un 500 ne dit pas non plus « cette
+  station n'existe pas ». La fiche d'identité de celle-ci répond d'ailleurs 200.
+- **Découper la fenêtre ne mène nulle part.** La descente de 46 286 jours à un
+  seul a coûté quinze requêtes avant d'abandonner. En famille journalière, où
+  toute la vie d'une station tient en 46 000 points, deux ordres de grandeur
+  sous la falaise, la largeur ne peut pas être en cause : le code n'y découpe
+  donc plus et rend l'erreur telle quelle.
+
+Une station dans ce cas est hors de portée de l'outil tant que le service ne la
+sert pas. C'est aussi pourquoi une campagne ne peut pas s'arrêter à la première
+rencontrée : l'échec se note station par station, et la liste continue.
+
 ### Le rythme soutenable, et pourquoi on ne l'a pas trouvé
 
 Calibration du 21 septembre 2026. Requête témoin d'un mois de brut à Tarascon,

@@ -91,6 +91,26 @@ class TooManyPoints(RuntimeError):
     """
 
 
+class UnknownStation(APIError):
+    """HydroPortail does not know this station code, and answers 404.
+
+    Hub'Eau lists stations that the series route ignores, W107403002 for one,
+    so a code can be perfectly valid in the referential and absent here. Like
+    UnservedStation, this ends one station and not the campaign.
+    """
+
+
+class UnservedStation(APIError):
+    """HydroPortail answers 500 for this station whatever is asked of it.
+
+    Measured on V126002001, the Rhone at Ruffieux: 500 on a whole year as on a
+    single day, on QIXnJ as on Q, while the station's own page answers 200 and
+    an unknown station code answers 404. The 500 therefore says neither "too
+    wide" nor "does not exist", and no window is small enough to get around it.
+    See SOURCE.md.
+    """
+
+
 # --------------------------------------------------------------------------
 #  Session and pacing
 # --------------------------------------------------------------------------
@@ -205,6 +225,12 @@ def _request(code: str, variable: str, family: str, status: str,
                 f"Requête refusée pour {code} ({start} à {end}) : "
                 f"{response.text[:200]}"
             )
+        if response.status_code == 404:
+            raise UnknownStation(
+                f"{code} : HydroPortail ne connaît pas ce code (404). Il peut "
+                "pourtant figurer au référentiel Hub'Eau, qui liste des "
+                "stations que ce service n'expose pas."
+            )
         if response.status_code != 200:
             raise APIError(f"HTTP {response.status_code} pour {code} ({start} à {end})")
 
@@ -286,6 +312,19 @@ def _fetch_window(cache: Path, code: str, status: str, start: date, end: date,
         points = _request(code, variable, family, status, start, end)
     except TooManyPoints:
         days = (end - start).days + 1
+        if family == "daily":
+            # A daily window cannot be too wide: the whole life of a station is
+            # about 46 000 points, two orders of magnitude below the cliff
+            # measured on the service, and the quota does not bind on this
+            # family. Splitting here would only repeat the same failure fifteen
+            # times, which is what it did before this branch existed.
+            raise UnservedStation(
+                f"{code} : HydroPortail échoue sur cette station quelle que "
+                f"soit la fenêtre demandée ({start} à {end}). Sa fiche répond "
+                "pourtant, donc le code est bon : c'est le service qui ne sait "
+                "pas produire sa série. Si l'échec ne dure pas, réessayer plus "
+                "tard le confirmera."
+            )
         if days <= MIN_WINDOW_DAYS:
             raise APIError(
                 f"{code} : HydroPortail échoue même sur une seule journée "

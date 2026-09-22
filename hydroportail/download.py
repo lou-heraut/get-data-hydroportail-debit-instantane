@@ -90,13 +90,31 @@ def inventory(
     logger.info("Inventaire de %d station(s), sans télécharger de chronique.", len(codes))
 
     maps: dict[str, list[dict[str, Any]]] = {}
+    refusees: list[str] = []
     for number, code in enumerate(codes, start=1):
-        points = api.coverage_map(cache, code)
+        try:
+            points = api.coverage_map(cache, code)
+        except (api.UnservedStation, api.UnknownStation) as erreur:
+            # The service either ignores this code or fails on it whatever the
+            # window. Writing it down as carrying no discharge would be a lie,
+            # and stopping would lose the fifty others: it leaves the tables,
+            # and the warning below is what the operator acts on.
+            refusees.append(code)
+            logger.warning("  [%d/%d] %s : %s Elle sort de l'inventaire.",
+                           number, len(codes), code,
+                           str(erreur).split(" : ", 1)[-1])
+            continue
         maps[code] = points
         first, last, days = _extent(points)
         logger.info("  [%d/%d] %s : %s",
                     number, len(codes), code,
                     f"{days} jours, {first} à {last}" if days else "aucun débit instantané")
+
+    codes = [code for code in codes if code not in refusees]
+    if not codes:
+        raise api.APIError(
+            "HydroPortail ne sert aucune des stations demandées : "
+            + ", ".join(refusees))
 
     records = api.station_records(codes)
     missing = [code for code in codes if code not in records]
@@ -108,6 +126,10 @@ def inventory(
     stations = _stations_table(codes, maps, records, siblings, replacements)
     couverture = _couverture_table(codes, maps)
     ref_codes = pd.DataFrame(schema.ref_codes_rows(), columns=schema.columns("ref_codes"))
+
+    if refusees:
+        logger.warning("  %d station(s) refusée(s) par le service, absente(s) des "
+                       "tables : %s", len(refusees), ", ".join(refusees))
 
     tables = {"stations": stations, "couverture": couverture, "ref_codes": ref_codes}
     if write:
@@ -141,7 +163,11 @@ def _resolve_sites(cache: Path, codes: Sequence[str], maps, records):
         if maps[code] or not others:
             continue
         for other in sorted(others):
-            if api.coverage_map(cache, other):
+            try:
+                carries = api.coverage_map(cache, other)
+            except (api.UnservedStation, api.UnknownStation):
+                continue
+            if carries:
                 replacements[code] = other
                 logger.info("  %s ne porte pas de débit ; %s, du même site, en porte",
                             code, other)

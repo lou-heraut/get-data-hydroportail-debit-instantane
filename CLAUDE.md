@@ -196,6 +196,11 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
   répondre par un recul exponentiel et plusieurs tentatives ferait replanter le
   service autant de fois. La bonne réaction est de **couper la fenêtre en
   deux**. Le recul exponentiel reste correct pour 429 et 503.
+- **Sauf en famille journalière, où un 500 veut dire « je ne sais pas servir
+  cette station ».** La largeur ne peut pas être en cause, toute la vie d'une
+  station y tenant en 46 000 points : découper coûte quinze requêtes pour
+  aboutir au même échec. Le code lève `UnservedStation`, et l'appelant note la
+  station et passe à la suivante plutôt que d'arrêter la campagne.
 - **`step` ne veut pas dire la même chose selon la famille de grandeur.** En
   instantané c'est un bouton de quota qui ne change rien à ce qui revient. En
   journalier c'est le « n » du nom : `QIXnJ` avec `step=20` rend les maxima sur
