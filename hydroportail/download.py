@@ -78,7 +78,7 @@ def _coverage_rate(first: str, last: str, days: int) -> float | None:
 
 def inventory(
     case: str,
-    racine: str | Path = DEFAULT_ROOT,
+    root: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
     write: bool = True,
 ) -> dict[str, pd.DataFrame]:
@@ -311,7 +311,7 @@ def summary(folder: str | Path) -> pd.DataFrame:
     if coverage is not None and not coverage.empty:
         statuses = Counter(coverage["statut"])
         logger.info("")
-        logger.info("Couverture : %d lignes, statuses rencontrés %s.",
+        logger.info("Couverture : %d lignes, statuts rencontrés %s.",
                     len(coverage), dict(sorted(statuses.items())))
         if coverage["nb_points"].isna().all():
             logger.info("Les colonnes de résolution restent vides tant que les "
@@ -440,7 +440,7 @@ def _resolution(frame: pd.DataFrame) -> pd.DataFrame:
 
 def download(
     case: str,
-    racine: str | Path = DEFAULT_ROOT,
+    root: str | Path = DEFAULT_ROOT,
     codes: Sequence[str] = (),
     statuses: Sequence[str] = api.STATUSES,
     write: bool = True,
