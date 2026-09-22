@@ -203,13 +203,33 @@ directement dans le texte.
 
 ## Conventions
 
-- **Code et commentaires en anglais, messages affichés en français.** Les noms
-  de colonnes ne sont jamais traduits depuis leur source, y compris les noms de
-  paramètres anglais d'HydroPortail comme `raw` et `most_valid` : la règle est
-  la traçabilité, pas une préférence de langue. Le détail est dans la section
-  « Conventions d'écriture » de [DESIGN.md](DESIGN.md).
-- README, commits, `AUTHORS.md` en français, en prose, pas en listes à puces
-  télégraphiques.
+### Quelle langue, où
+
+**Le français est la langue de la documentation, et de ce dont le sujet est
+français par nature.** Tout le reste est de la structure, et la structure est en
+anglais.
+
+| en anglais | en français |
+|---|---|
+| noms de fonctions, de variables, de modules | messages affichés, aide des commandes |
+| noms de fichiers et de dossiers | README, SOURCE, DESIGN, ROADMAP, CHANGELOG |
+| cibles de Makefile, options de ligne de commande | messages de commit, `AUTHORS.md` |
+| | noms de colonnes, hérités d'une source française |
+
+Ce qu'on tape est une instruction à une machine, et l'anglais est la langue des
+machines. Ce qu'on lit est de la prose adressée à quelqu'un, et ceux à qui elle
+s'adresse lisent le français.
+
+**La donnée est le cas particulier, et il se déduit de la même règle.** Les noms
+de colonnes viennent d'un service français, pour des hydrologues français :
+`code_station` et `date_obs` sont les noms de Hub'Eau, pas une traduction que
+nous aurions faite. Ils ne se traduisent donc jamais, pas plus que les valeurs
+anglaises d'HydroPortail, `raw` et `most_valid`, qui se recopient telles quelles.
+La règle est la traçabilité, pas une préférence de langue. Le détail est dans la
+section « Conventions d'écriture » de [DESIGN.md](DESIGN.md).
+
+Le README, les commits et `AUTHORS.md` s'écrivent en prose, pas en listes à
+puces télégraphiques.
 
 ### Rédaction
 
