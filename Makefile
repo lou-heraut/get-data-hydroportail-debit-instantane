@@ -6,7 +6,7 @@
 CASE ?= 2026-09_eclusees-rmc
 ROOT ?= data
 PY   := .python_env/bin/python
-LOG  ?= ../.telechargement_$(CASE).log
+LOG  ?= ../.download_$(CASE).log
 
 GREEN  := \033[0;32m
 YELLOW := \033[0;33m
