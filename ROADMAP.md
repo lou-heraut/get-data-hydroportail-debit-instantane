@@ -107,29 +107,38 @@ argumentée plutôt que de question ouverte.
 ### La liste des stations, reçue le 22 septembre 2026
 
 Le fichier tel qu'il a été reçu est dans `ressources/liste-recue_2026-09-22.xlsx`,
-et `preparer_liste.py` en a tiré `ressources/stations-demandees_2026-09-22.csv` :
+et `preparer_liste.py` en tire `ressources/stations-demandees_2026-09-22.csv` :
 51 codes normalisés, traduits en codes de station et confrontés au service, avec
 pour chacun comment il a été résolu et ce qui reste douteux. Ce que la traduction
 a donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce qu'une liste réelle
 a donné ».
 
+Les choix que le script ne peut pas faire seul vivent dans
+`ressources/arbitrages_2026-09-22.csv`, avec leur motif, plutôt que dans le CSV
+produit, qui se réécrit à chaque passage. Trois ont été tranchés, et la règle
+qui s'en dégage vaut pour la suite : **c'est la donnée qui prime sur
+l'exploitant demandé.** Quand la station nommée ne publie pas d'instantané et
+qu'une autre du même point en publie, on prend celle qui en publie et on le
+signale. C'est ce qui a été fait pour la Bourne, où la station EDF demandée ne
+porte que 64 jours contre 3 241 à celle de la DREAL, et c'est déjà ce que le
+script faisait pour les trois stations CNR du Rhône qui ne publient rien.
+
 Ce qui reste à faire :
 
-1. **Trancher les vingt-deux lignes signalées**, et d'abord les trois où le
-   libellé a retenu une station bien moins fournie qu'une soeur : la Siagne à
-   Pégomas, 224 jours contre 19 932 ; la Bourne à Saint-Just-de-Claix, 64 contre
-   3 241 ; le Verdon à Vinon, 2 142 contre 7 074. Le libellé est le seul indice
-   dont le script dispose, et il ne suffit pas quand deux stations portent des
-   noms également plausibles. La correction se fait à la main dans le CSV.
-2. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des absences
+1. **Poser les quatre codes sans station à l'équipe demandeuse.** Deux sont des absences
    établies, l'Arc à Saint-Michel et l'Eau d'Olle à Allemond, qui ne portent
    aucun débit instantané. Les deux autres, la Romanche à Livet-et-Gavet et le
    Rhône à Ruffieux, ne sont pas conclus : le service refuse de servir une de
    leurs stations, et une station non sondée ne prouve rien.
-3. **Inventorier** les stations retenues, une requête de deux secondes chacune,
+2. **Inventorier** les stations retenues, une requête de deux secondes chacune,
    sans télécharger de chronique.
-4. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses stations et sa
+3. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses stations et sa
    période avant qu'on engage les heures de téléchargement.
+
+Les dix-neuf lignes encore signalées le sont pour information et non pour
+décision : un site porte plusieurs stations dont une seule s'appelle comme lui,
+ou le service a refusé une soeur qui ne changeait rien. Elles se relisent au
+moment de rendre la liste.
 
 L'écart entre 51 et les 68 stations annoncées n'est toujours pas expliqué, et
 vaut d'être posé avec le reste.
@@ -145,6 +154,44 @@ Pour une éventuelle mise à jour incrémentale : le JSON porte un champ
 `correctionCurves`, vide sur tous les essais. S'il expose un jour les courbes et
 leurs dates, il donne le signal qui manque. Les empreintes SHA-256 par station,
 posées en v1, rendent en attendant mesurable ce qui a bougé dans le passé.
+
+## Améliorations d'usage, repérées et non engagées
+
+Aucune n'est nécessaire à la campagne, toutes feraient gagner du temps à qui
+doit choisir des stations.
+
+### Une frise de couverture, là où elle aide à voir
+
+Un tableau de chiffres dit combien de jours une station porte, jamais la forme
+de sa chronique. Une ligne par station, un caractère par année, montre d'un coup
+d'oeil ce qu'aucune colonne ne montre : un remplacement de station, une
+publication qui passe du continu à l'épisodique, un trou de dix ans.
+
+```
+Bourne a St-Just       2003                        2026
+  W334000102   3241 j  ++#         +#####+...+.
+  W334000101     64 j                        ++
+
+#  annee pleine     +  30 a 300 jours     .  quelques jours
+```
+
+C'est ce qui a rendu les trois arbitrages évidents en quelques secondes. La
+place naturelle est le résumé de `--inventaire` et le rapport de
+`preparer_liste.py`, pas les CSV, qui restent des données.
+
+### Ramener les champs de texte du référentiel
+
+`commentaire_station`, `commentaire_influence_locale_station` et
+`descriptif_station` portent le récit du producteur : pourquoi une station
+existe, ce qu'elle vaut, par quoi elle a été remplacée. C'est là qu'était la
+réponse pour le Verdon à Vinon, où le producteur écrit lui-même que le capteur
+de l'ancienne station était sous le pont et ses hauteurs toutes douteuses, et
+qu'il en a installé une autre 20 m en amont pour cette raison.
+
+Les afficher au moins sur les lignes signalées éviterait de refaire l'enquête à
+la main. Les ajouter à `stations.csv` serait plus utile encore, mais c'est un
+changement du format livré, donc une décision de version : ce sont des textes
+libres et longs, dont il faudrait choisir la place et la troncature.
 
 ## Ce qui est tranché, et qu'on ne rouvre pas
 

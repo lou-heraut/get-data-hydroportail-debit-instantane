@@ -49,6 +49,7 @@ logger = logging.getLogger("preparation")
 RESSOURCES = Path("ressources")
 TABLEUR = RESSOURCES / "liste-recue_2026-09-22.xlsx"
 SORTIE = RESSOURCES / "stations-demandees_2026-09-22.csv"
+ARBITRAGES = RESSOURCES / "arbitrages_2026-09-22.csv"
 
 #: Espace de nommage du format xlsx, qui n'est qu'un zip de XML.
 _XL = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -138,6 +139,25 @@ def lire_tableur(chemin: Path) -> list[dict[str, str]]:
         ligne["ligne_source"] = numero
         lignes.append(ligne)
     return lignes
+
+
+def lire_arbitrages(chemin: Path) -> dict[str, tuple[str, str]]:
+    """Les choix faits à la main, par code demandé, avec leur motif.
+
+    Le script ne sait trancher qu'au libellé, et le libellé d'une liste désigne
+    un site, pas un instrument : là où plusieurs stations d'un même site portent
+    du débit, la décision revient à quelqu'un qui sait ce qu'il cherche. Elle
+    vit ici plutôt que dans le CSV produit, qui se réécrit à chaque passage, et
+    elle porte son motif pour que personne n'ait à refaire l'enquête.
+    """
+    if not chemin.exists():
+        return {}
+    table = pd.read_csv(chemin, dtype=str).fillna("")
+    manquantes = {"code_demande", "code_station", "motif"} - set(table.columns)
+    if manquantes:
+        raise ValueError(f"{chemin} : colonnes absentes, {', '.join(sorted(manquantes))}.")
+    return {ligne.code_demande.strip(): (ligne.code_station.strip(), ligne.motif.strip())
+            for ligne in table.itertuples() if ligne.code_demande.strip()}
 
 
 # --------------------------------------------------------------------------
@@ -258,14 +278,19 @@ ECART_SOEUR = 2.0
 
 
 def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
-             jours: dict[str, int], non_servies: dict[str, str]) -> str:
-    """Ce qui demande un regard humain sur cette ligne, en clair."""
+             jours: dict[str, int], non_servies: dict[str, str],
+             arbitre: bool = False) -> str:
+    """Ce qui demande un regard humain sur cette ligne, en clair.
+
+    Une ligne arbitrée garde ce qui relève du service, qui reste vrai, et perd
+    ce qui relevait du choix : il a été fait, et le motif est dans « choix ».
+    """
     motifs = []
     for code in candidates:
         if code in non_servies:
             motifs.append(f"HydroPortail {non_servies[code]} {code}")
     retenue = ligne["code_station"]
-    if retenue:
+    if retenue and not arbitre:
         soeurs = [(jours.get(code, 0), code) for code in candidates if code != retenue]
         if soeurs:
             mieux, code = max(soeurs)
@@ -280,9 +305,9 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
         # Le pourquoi est dans « choix », qui distingue l'absence établie de la
         # station que le service a refusé de sonder.
         motifs.append("aucune station retenue")
-    if len(str(ligne["stations_avec_debit"]).split(";")) > 1:
+    if not arbitre and len(str(ligne["stations_avec_debit"]).split(";")) > 1:
         motifs.append("plusieurs stations du site portent du débit")
-    if ligne["code_station"] and ligne["concordance_libelle"] < 0.6:
+    if not arbitre and ligne["code_station"] and ligne["concordance_libelle"] < 0.6:
         motifs.append("libellé éloigné de celui du référentiel")
     if ligne["code_station"] and ligne["type_code_demande"] == "station" \
             and ligne["code_station"] != ligne["code_demande"]:
@@ -290,10 +315,14 @@ def _alertes(ligne: dict[str, Any], candidates: Sequence[str],
     return " ; ".join(motifs)
 
 
-def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER) -> pd.DataFrame:
+def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER,
+             arbitrages: Path = ARBITRAGES) -> pd.DataFrame:
     """Du tableur reçu à la table de correspondance, en trois passes."""
     cache = Path(dossier) / ".sources"
     lignes = lire_tableur(tableur)
+    choisies = lire_arbitrages(arbitrages)
+    if choisies:
+        logger.info("%d arbitrage(s) lu(s) dans %s.", len(choisies), arbitrages)
     logger.info("Tableur lu : %d ligne(s).", len(lignes))
 
     for ligne in lignes:
@@ -323,7 +352,11 @@ def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER) -> pd.D
                 records.setdefault(row["code_station"], row)
 
     candidates = _candidates(lignes, records, par_site)
-    a_sonder = sorted({code for liste in candidates.values() for code in liste})
+    # Une station arbitrée se sonde comme les autres, même si le référentiel ne
+    # la rattache pas au site demandé : le choix humain n'a pas à se justifier
+    # auprès du script, mais sa couverture doit figurer dans la table.
+    a_sonder = sorted({code for liste in candidates.values() for code in liste}
+                      | {code for code, _ in choisies.values() if code})
     logger.info("HydroPortail : %d station(s) candidates à sonder, "
                 "une requête rapide chacune.", len(a_sonder))
 
@@ -352,6 +385,10 @@ def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER) -> pd.D
     for ligne in lignes:
         code = ligne["code_demande"]
         retenue, choix = _retenir(ligne, candidates[code], jours, records, non_servies)
+        arbitre = code in choisies
+        if arbitre:
+            retenue, motif = choisies[code]
+            choix = f"arbitré à la main : {motif}"
         record = records.get(retenue, {}) if retenue else {}
         debut, fin, nombre = etendues.get(retenue, ("", "", 0))
         ligne.update({
@@ -374,7 +411,7 @@ def preparer(tableur: Path, sortie: Path, dossier: str = DEFAULT_FOLDER) -> pd.D
             ) if retenue else "",
             "choix": choix,
         })
-        ligne["alerte"] = _alertes(ligne, candidates[code], jours, non_servies)
+        ligne["alerte"] = _alertes(ligne, candidates[code], jours, non_servies, arbitre)
 
     table = pd.DataFrame(lignes, columns=COLONNES)
     sortie.parent.mkdir(parents=True, exist_ok=True)
@@ -389,7 +426,7 @@ def resume(table: pd.DataFrame) -> None:
     print(f"\n{len(table)} codes demandés, {retenues['code_station'].nunique()} "
           f"stations retenues, {len(table) - len(retenues)} sans débit instantané.")
     print("\nComment chaque station a été retenue :")
-    for choix, nombre in table["choix"].value_counts().items():
+    for choix, nombre in table["choix"].str.split(" : ").str[0].value_counts().items():
         print(f"  {nombre:3d}  {choix}")
     alertes = table[table["alerte"] != ""]
     if alertes.empty:
@@ -407,6 +444,8 @@ def main(argv: list[str] | None = None) -> int:
                         help=f"tableur reçu (défaut : {TABLEUR})")
     parser.add_argument("-s", "--sortie", default=str(SORTIE),
                         help=f"table de correspondance à écrire (défaut : {SORTIE})")
+    parser.add_argument("-a", "--arbitrages", default=str(ARBITRAGES),
+                        help=f"choix faits à la main (défaut : {ARBITRAGES})")
     parser.add_argument("-d", "--dossier", default=DEFAULT_FOLDER,
                         help="dossier du cache des réponses "
                              f"(défaut : {DEFAULT_FOLDER})")
@@ -414,7 +453,8 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     try:
-        table = preparer(Path(args.tableur), Path(args.sortie), args.dossier)
+        table = preparer(Path(args.tableur), Path(args.sortie), args.dossier,
+                         Path(args.arbitrages))
     except (ValueError, FileNotFoundError, api.APIError) as erreur:
         print(f"\nErreur : {erreur}", file=sys.stderr)
         return 1
