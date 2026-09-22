@@ -40,11 +40,11 @@ exemples :
 """
 
 
-def read_codes(chemin: str | Path) -> list[str]:
+def read_codes(path: str | Path) -> list[str]:
     """Un code par ligne. Les lignes vides et celles commençant par # sont ignorées."""
-    lignes = Path(chemin).read_text(encoding="utf-8").splitlines()
-    return [ligne.strip() for ligne in lignes
-            if ligne.strip() and not ligne.strip().startswith("#")]
+    rows = Path(path).read_text(encoding="utf-8").splitlines()
+    return [row.strip() for row in rows
+            if row.strip() and not row.strip().startswith("#")]
 
 
 def case_codes(case: str) -> list[str]:
@@ -54,12 +54,12 @@ def case_codes(case: str) -> list[str]:
     par quel chemin la liste est arrivée, tableur traduit ou dix codes écrits à
     la main : ici, c'est un code par ligne.
     """
-    chemin = CASES / case / "stations.txt"
-    if not chemin.exists():
+    path = CASES / case / "stations.txt"
+    if not path.exists():
         raise FileNotFoundError(
-            f"{chemin} : ce cas n'a pas de liste de stations. Donnez-en une avec "
+            f"{path} : ce cas n'a pas de liste de stations. Donnez-en une avec "
             "--stations ou --file, ou écrivez ce fichier.")
-    return read_codes(chemin)
+    return read_codes(path)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,23 +76,23 @@ def build_parser() -> argparse.ArgumentParser:
                         help=f"racine des données (défaut : {DEFAULT_ROOT}). Le "
                              "cache des réponses y est partagé par tous les cas")
 
-    groupe = parser.add_argument_group("quelles stations")
-    groupe.add_argument("--stations", nargs="+", metavar="CODE",
-                        help="codes Sandre de station, au lieu de ceux du cas")
-    groupe.add_argument("--file", metavar="CHEMIN",
-                        help="fichier de codes, un par ligne, au lieu de ceux du cas")
+    group = parser.add_argument_group("quelles stations")
+    group.add_argument("--stations", nargs="+", metavar="CODE",
+                       help="codes Sandre de station, au lieu de ceux du cas")
+    group.add_argument("--file", metavar="CHEMIN",
+                       help="fichier de codes, un par ligne, au lieu de ceux du cas")
 
-    groupe = parser.add_argument_group("comment")
-    groupe.add_argument("--inventory", action="store_true",
-                        help="afficher et écrire ce qui existe, sans télécharger "
+    group = parser.add_argument_group("comment")
+    group.add_argument("--inventory", action="store_true",
+                       help="afficher et écrire ce qui existe, sans télécharger "
                              "de chronique (une requête rapide par station)")
-    groupe.add_argument("--statuses", default="both",
-                        choices=["both", "raw", "most_valid"],
-                        help="quelles passes télécharger (défaut : both). "
+    group.add_argument("--statuses", default="both",
+                       choices=["both", "raw", "most_valid"],
+                       help="quelles passes télécharger (défaut : both). "
                              "most_valid est la chronique arbitrée par le "
                              "producteur, raw le signal brut non corrigé")
-    groupe.add_argument("--quiet", action="store_true",
-                        help="n'afficher que les erreurs")
+    group.add_argument("--quiet", action="store_true",
+                       help="n'afficher que les erreurs")
     return parser
 
 
@@ -121,8 +121,8 @@ def main(argv: list[str] | None = None) -> int:
         if not args.quiet:
             summary(paths(args.case, args.root)[0])
         return 0
-    except (APIError, ValueError, FileNotFoundError) as erreur:
-        print(f"\nErreur : {erreur}", file=sys.stderr)
+    except (APIError, ValueError, FileNotFoundError) as error:
+        print(f"\nErreur : {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("\nInterrompu. Relancez la commande : ce qui est déjà en cache "

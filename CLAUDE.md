@@ -205,6 +205,9 @@ directement dans le texte.
 
 ### Quelle langue, où
 
+*Cette section est écrite pour être reprise telle quelle dans les dépôts
+voisins.*
+
 **Le français est la langue de la documentation, et de ce dont le sujet est
 français par nature.** Tout le reste est de la structure, et la structure est en
 anglais.
@@ -230,6 +233,39 @@ section « Conventions d'écriture » de [DESIGN.md](DESIGN.md).
 
 Le README, les commits et `AUTHORS.md` s'écrivent en prose, pas en listes à
 puces télégraphiques.
+
+### Renommer sans casser
+
+*Écrit après avoir cassé trois fois le même jour. Également transposable.*
+
+Un renommage d'identifiants à coups de `sed` abîme la prose et laisse des
+références orphelines : le mot `mesures` est un nom de table dans le code et un
+mot français dans un commentaire, et rien ne les distingue pour une expression
+régulière. **Le repérage passe donc par le lexer**, `tokenize` de la
+bibliothèque standard, qui sait ce qui est un identifiant et ce qui est une
+chaîne ou un commentaire. Trois précautions valent d'être redites :
+
+- **un nom précédé d'un point ne se renomme pas.** `row.code_station` est un nom
+  de colonne venu de la source, pas une variable à nous ;
+- **un renommage qui ferait entrer en collision deux noms distincts du même
+  fichier se refuse**, plutôt que de fusionner silencieusement deux variables.
+  L'outil les signale et on choisit un autre nom ;
+- **les lignes de continuation se réalignent après coup.** Un nom plus court
+  décale tout ce qui était aligné sur une parenthèse ouvrante, et le compilateur
+  n'en dit rien.
+
+**Les tests unitaires ne suffisent pas à valider un renommage** : ils ne portent
+ici que sur les fonctions pures, et le premier renommage incomplet a laissé
+passer un `NameError` dans la fonction de téléchargement. Le contrôle minimal
+est de rejouer une station entièrement en cache, qui exerce tout le chemin
+d'écriture sans coûter une requête :
+
+```bash
+python download_hydroportail.py --case _smoke --stations W107403003 --root data
+python -c "from frictionless import Package; \
+    print(Package('data/_smoke/datapackage.json').validate().valid)"
+rm -rf data/_smoke
+```
 
 ### Rédaction
 

@@ -41,56 +41,56 @@ def _points_from_cache(cache: Path, code: str) -> pd.DataFrame:
     l'intérêt du contrôle est justement de ne pas refaire confiance à ce qu'on
     veut vérifier.
     """
-    lignes = []
-    for fichier in sorted((cache / code).glob("*_Q_*.json.gz")):
-        with gzip.open(fichier, "rt", encoding="utf-8") as flux:
-            contenu = json.load(flux)
-        if not isinstance(contenu, list):   # une fenêtre coupée en deux
+    rows = []
+    for file_path in sorted((cache / code).glob("*_Q_*.json.gz")):
+        with gzip.open(file_path, "rt", encoding="utf-8") as stream:
+            content = json.load(stream)
+        if not isinstance(content, list):   # une fenêtre coupée en deux
             continue
-        for point in contenu:
-            lignes.append((point["t"], int(point["v"]), int(point["s"]),
-                           int(point["q"]), int(point["m"]), int(point["c"])))
-    return pd.DataFrame(lignes, columns=["t", "v", "s", "q", "m", "c"])
+        for point in content:
+            rows.append((point["t"], int(point["v"]), int(point["s"]),
+                         int(point["q"]), int(point["m"]), int(point["c"])))
+    return pd.DataFrame(rows, columns=["t", "v", "s", "q", "m", "c"])
 
 
-def check_no_loss(dossier: Path, cache: Path) -> bool:
+def check_no_loss(folder: Path, cache: Path) -> bool:
     """Tout point servi se retrouve dans measurements/, et rien n'y a été inventé."""
     logger.info("1. Non-perte entre le cache et les mesures")
-    measurements = dossier / "measurements"
+    measurements = folder / "measurements"
     intact = True
 
-    for fichier in sorted(measurements.glob("*.parquet")):
-        code = fichier.stem
-        servi = _points_from_cache(cache, code)
-        if servi.empty:
+    for file_path in sorted(measurements.glob("*.parquet")):
+        code = file_path.stem
+        served = _points_from_cache(cache, code)
+        if served.empty:
             logger.warning("   %s : aucun cache, contrôle impossible", code)
             continue
-        servi = servi.drop_duplicates()
+        served = served.drop_duplicates()
 
-        garde = pd.read_parquet(fichier)
-        garde = pd.DataFrame({
-            "t": garde["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "v": (garde["debit_m3s"] * 1000).round().astype("int64"),
-            "s": garde["statut"].astype("int64"),
-            "q": garde["qualification"].astype("int64"),
-            "m": garde["methode"].astype("int64"),
-            "c": garde["continuite"].astype("int64"),
+        kept = pd.read_parquet(file_path)
+        kept = pd.DataFrame({
+            "t": kept["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "v": (kept["debit_m3s"] * 1000).round().astype("int64"),
+            "s": kept["statut"].astype("int64"),
+            "q": kept["qualification"].astype("int64"),
+            "m": kept["methode"].astype("int64"),
+            "c": kept["continuite"].astype("int64"),
         })
 
-        fusion = servi.merge(garde, how="outer", indicator=True)
-        perdus = int((fusion["_merge"] == "left_only").sum())
-        inventes = int((fusion["_merge"] == "right_only").sum())
-        if perdus or inventes:
+        joined_frame = served.merge(kept, how="outer", indicator=True)
+        lost = int((joined_frame["_merge"] == "left_only").sum())
+        invented = int((joined_frame["_merge"] == "right_only").sum())
+        if lost or invented:
             intact = False
             logger.error("   %s : %d point(s) perdu(s), %d inventé(s)",
-                         code, perdus, inventes)
+                         code, lost, invented)
         else:
             logger.info("   %s : %s points servis, tous présents",
-                        code, f"{len(servi):,}".replace(",", " "))
+                        code, f"{len(served):,}".replace(",", " "))
     return intact
 
 
-def check_against_hubeau(dossier: Path, code: str = "V720001002") -> bool:
+def check_against_hubeau(folder: Path, code: str = "V720001002") -> bool:
     """Ce qu'on a est-il ce que Hub'Eau diffuse, au litre près.
 
     Hub'Eau ne sert l'instantané que sur un mois glissant, donc le recoupement
@@ -98,57 +98,57 @@ def check_against_hubeau(dossier: Path, code: str = "V720001002") -> bool:
     les deux services parlent bien de la même donnée, pas de tout revérifier.
     """
     logger.info("2. Recoupement avec Hub'Eau sur %s", code)
-    fichier = dossier / "measurements" / f"{code}.parquet"
-    if not fichier.exists():
+    file_path = folder / "measurements" / f"{code}.parquet"
+    if not file_path.exists():
         logger.warning("   %s absent, contrôle sauté", code)
         return True
 
     try:
-        reponse = requests.get(
+        http_response = requests.get(
             "https://hubeau.eaufrance.fr/api/v2/hydrometrie/observations_tr",
             params={"code_entite": code, "grandeur_hydro": "Q",
                     "size": 20000, "format": "json"},
             headers={"User-Agent": api.USER_AGENT.format(version="verif")},
             timeout=300)
-        donnees = reponse.json().get("data") or []
-    except (requests.RequestException, ValueError) as erreur:
-        logger.warning("   Hub'Eau injoignable (%s), contrôle sauté", erreur)
+        observations = http_response.json().get("data") or []
+    except (requests.RequestException, ValueError) as failure:
+        logger.warning("   Hub'Eau injoignable (%s), contrôle sauté", failure)
         return True
 
-    if not donnees:
+    if not observations:
         logger.warning("   Hub'Eau ne rend rien, contrôle sauté")
         return True
 
     # Interrogé par code de station, Hub'Eau ne double pas ; c'est par code de
     # site qu'il rend chaque observation deux fois.
-    leur = pd.DataFrame({
-        "t": [ligne["date_obs"] for ligne in donnees],
-        "v_hubeau": [float(ligne["resultat_obs"]) / 1000 for ligne in donnees],
+    theirs = pd.DataFrame({
+        "t": [row["date_obs"] for row in observations],
+        "v_hubeau": [float(row["resultat_obs"]) / 1000 for row in observations],
     }).drop_duplicates(subset="t")
 
-    notre = pd.read_parquet(fichier)
-    notre = notre[notre["statut"] == 4]
-    notre = pd.DataFrame({
-        "t": notre["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "v_nous": notre["debit_m3s"],
+    ours = pd.read_parquet(file_path)
+    ours = ours[ours["statut"] == 4]
+    ours = pd.DataFrame({
+        "t": ours["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "v_ours": ours["debit_m3s"],
     }).drop_duplicates(subset="t")
 
-    commun = leur.merge(notre, on="t")
-    if commun.empty:
+    common = theirs.merge(ours, on="t")
+    if common.empty:
         logger.warning("   aucun horodatage commun, contrôle sauté")
         return True
-    ecart = (commun["v_hubeau"] - commun["v_nous"]).abs().max()
+    gap = (common["v_hubeau"] - common["v_ours"]).abs().max()
     logger.info("   %d horodatages communs sur %d servis par Hub'Eau",
-                len(commun), len(leur))
-    logger.info("   écart maximal : %.6f m3/s", ecart)
-    if ecart > 0.001:
+                len(common), len(theirs))
+    logger.info("   écart maximal : %.6f m3/s", gap)
+    if gap > 0.001:
         logger.error("   les deux services ne servent pas la même donnée")
         return False
     return True
 
 
-def check_status_inclusion(dossier: Path, cache: Path,
-                               codes: list[str] | None = None) -> bool:
+def check_status_inclusion(folder: Path, cache: Path,
+                           codes: list[str] | None = None) -> bool:
     """most_valid contient-elle toujours pre_validated_and_validated.
 
     C'est le pari qui autorise à ne télécharger que deux passes. Il a été
@@ -157,69 +157,69 @@ def check_status_inclusion(dossier: Path, cache: Path,
     casse un jour, on l'apprend ici et non au milieu d'une analyse.
     """
     logger.info("3. Inclusion de pre_validated_and_validated dans most_valid")
-    stations = pd.read_csv(dossier / "stations.csv", dtype={"code_station": "string"})
-    porteuses = stations[stations["porte_debit"].astype(bool)]["code_station"].tolist()
-    codes = codes or porteuses[:3]
-    fin = date.today() - timedelta(days=1)
-    debut = fin - timedelta(days=120)
+    stations = pd.read_csv(folder / "stations.csv", dtype={"code_station": "string"})
+    carrying_codes = stations[stations["porte_debit"].astype(bool)]["code_station"].tolist()
+    codes = codes or carrying_codes[:3]
+    last_day = date.today() - timedelta(days=1)
+    start = last_day - timedelta(days=120)
     correct = True
 
     for code in codes:
-        fichier = dossier / "measurements" / f"{code}.parquet"
-        if not fichier.exists():
+        file_path = folder / "measurements" / f"{code}.parquet"
+        if not file_path.exists():
             continue
-        intermediaires = api.fetch_series(cache, code, "pre_validated_and_validated",
-                                          debut, fin)
-        if not intermediaires:
+        intermediate = api.fetch_series(cache, code, "pre_validated_and_validated",
+                                        start, last_day)
+        if not intermediate:
             logger.info("   %s : rien de pré-validé sur la période, rien à vérifier", code)
             continue
-        notre = pd.read_parquet(fichier)
-        connus = set(zip(notre["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                         notre["statut"].astype(int)))
-        manquants = [point for point in intermediaires
-                     if (point["t"], int(point["s"])) not in connus]
-        if manquants:
+        ours = pd.read_parquet(file_path)
+        known_names = set(zip(ours["date_obs"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         ours["statut"].astype(int)))
+        missing_codes = [point for point in intermediate
+                     if (point["t"], int(point["s"])) not in known_names]
+        if missing_codes:
             correct = False
             logger.error("   %s : %d point(s) pré-validés absents de measurements/ ; "
                          "l'inclusion ne tient plus, il faut télécharger la "
-                         "troisième passe", code, len(manquants))
+                         "troisième passe", code, len(missing_codes))
         else:
             logger.info("   %s : %d points pré-validés, tous présents",
-                        code, len(intermediaires))
+                        code, len(intermediate))
     return correct
 
 
-def check_codes(dossier: Path) -> bool:
+def check_codes(folder: Path) -> bool:
     """Aucun code de qualité n'a échappé à la nomenclature figée."""
     logger.info("4. Codes de qualité connus")
-    reference = pd.read_csv(dossier / "ref_codes.csv")
-    connus = set(zip(reference["type"], reference["code"]))
-    inconnus = set()
-    for fichier in sorted((dossier / "measurements").glob("*.parquet")):
-        frame = pd.read_parquet(fichier, columns=["statut", "qualification",
-                                                  "methode", "continuite"])
-        for colonne, genre in (("statut", "s"), ("qualification", "q"),
-                               ("methode", "m"), ("continuite", "c")):
-            for valeur in frame[colonne].unique():
-                if (genre, int(valeur)) not in connus:
-                    inconnus.add((genre, int(valeur)))
-    if inconnus:
-        logger.error("   codes absents de ref_codes.csv : %s", sorted(inconnus))
+    reference = pd.read_csv(folder / "ref_codes.csv")
+    known_names = set(zip(reference["type"], reference["code"]))
+    unknown_values = set()
+    for file_path in sorted((folder / "measurements").glob("*.parquet")):
+        frame = pd.read_parquet(file_path, columns=["statut", "qualification",
+                                                    "methode", "continuite"])
+        for column, kind in (("statut", "s"), ("qualification", "q"),
+                             ("methode", "m"), ("continuite", "c")):
+            for value in frame[column].unique():
+                if (kind, int(value)) not in known_names:
+                    unknown_values.add((kind, int(value)))
+    if unknown_values:
+        logger.error("   codes absents de ref_codes.csv : %s", sorted(unknown_values))
         logger.error("   la nomenclature Sandre a bougé, voir SOURCE.md")
         return False
     logger.info("   tous les codes rencontrés sont décrits")
     return True
 
 
-def check_integrity(dossier: Path) -> bool:
+def check_integrity(folder: Path) -> bool:
     """coverage.csv ne parle que de stations que stations.csv connaît."""
     logger.info("5. Intégrité référentielle")
-    stations = pd.read_csv(dossier / "stations.csv", dtype={"code_station": "string"})
-    coverage = pd.read_csv(dossier / "coverage.csv", dtype={"code_station": "string"})
-    orphelines = set(coverage["code_station"]) - set(stations["code_station"])
-    if orphelines:
+    stations = pd.read_csv(folder / "stations.csv", dtype={"code_station": "string"})
+    coverage = pd.read_csv(folder / "coverage.csv", dtype={"code_station": "string"})
+    orphans = set(coverage["code_station"]) - set(stations["code_station"])
+    if orphans:
         logger.error("   %d station(s) de coverage.csv absente(s) de "
-                     "stations.csv : %s", len(orphelines), sorted(orphelines))
+                     "stations.csv : %s", len(orphans), sorted(orphans))
         return False
     logger.info("   %d lignes de couverture, aucune orpheline", len(coverage))
     return True
@@ -233,25 +233,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", default=DEFAULT_ROOT, metavar="CHEMIN",
                         help=f"racine des données (défaut : {DEFAULT_ROOT})")
     args = parser.parse_args(argv)
-    dossier, cache = paths(args.case, args.root)
+    folder, cache = paths(args.case, args.root)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    if not (dossier / "stations.csv").exists():
-        print(f"Aucun jeu de données dans {dossier}.", file=sys.stderr)
+    if not (folder / "stations.csv").exists():
+        print(f"Aucun jeu de données dans {folder}.", file=sys.stderr)
         return 1
 
-    resultats = [
-        check_no_loss(dossier, cache),
-        check_against_hubeau(dossier),
-        check_status_inclusion(dossier, cache),
-        check_codes(dossier),
-        check_integrity(dossier),
+    results = [
+        check_no_loss(folder, cache),
+        check_against_hubeau(folder),
+        check_status_inclusion(folder, cache),
+        check_codes(folder),
+        check_integrity(folder),
     ]
     logger.info("")
-    if all(resultats):
+    if all(results):
         logger.info("Tous les contrôles passent.")
         return 0
-    logger.error("%d contrôle(s) en échec.", sum(1 for ok in resultats if not ok))
+    logger.error("%d contrôle(s) en échec.", sum(1 for ok in results if not ok))
     return 1
 
 

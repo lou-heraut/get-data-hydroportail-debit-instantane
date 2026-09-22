@@ -608,12 +608,13 @@ donne le signal de révision qui manque.
 Conforme aux dépôts voisins :
 
 ```
-download_hydroportail.py    ~130 l   interface en ligne de commande
-hydroportail/api.py         ~300 l   HTTP, politesse, fenetrage, cache, Hub'Eau
-hydroportail/schema.py      ~350 l   colonnes, types, vocabulaire, datapackage
-hydroportail/download.py    ~450 l   orchestration, ecriture, relecture
-check_hydroportail.py    ~130 l   non-perte et integrite
-tests/                      ~180 l   les quatre fonctions pures
+download_hydroportail.py      ~130 l   interface en ligne de commande
+hydroportail/api.py           ~500 l   HTTP, politesse, fenetrage, cache, Hub'Eau
+hydroportail/schema.py        ~390 l   colonnes, types, vocabulaire, datapackage
+hydroportail/download.py      ~580 l   orchestration, ecriture, relecture
+prepare_list.py               ~490 l   traduction d'une liste recue en stations
+check_hydroportail.py         ~260 l   non-perte et integrite
+tests/                        ~330 l   les fonctions pures
 ```
 
 `api.py` porte aussi les quelques lignes qui interrogent le référentiel des

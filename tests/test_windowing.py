@@ -48,7 +48,7 @@ def _covers_exactly(asked, start, end):
 #  The invariant that matters
 # --------------------------------------------------------------------------
 
-def test_les_fenetres_pavent_la_periode_quelle_que_soit_la_densite():
+def test_windows_tile_the_period_whatever_the_density():
     start, end = date(1981, 1, 1), date(2026, 9, 20)
     for density in (288, 96, 12, 1, 0.2, 0.01):
         asked, fetch = _recording(density)
@@ -56,20 +56,20 @@ def test_les_fenetres_pavent_la_periode_quelle_que_soit_la_densite():
         _covers_exactly(asked, start, end)
 
 
-def test_une_periode_d_un_seul_jour_donne_une_seule_fenetre():
+def test_a_single_day_period_gives_one_window():
     day = date(2024, 3, 1)
     asked, fetch = _recording(288)
     walk(day, day, fetch)
     assert asked == [(day, day)]
 
 
-def test_une_periode_vide_ne_demande_rien():
+def test_an_empty_period_asks_for_nothing():
     asked, fetch = _recording(288)
     assert walk(date(2024, 3, 2), date(2024, 3, 1), fetch) == []
     assert asked == []
 
 
-def test_aucun_point_n_est_perdu_ni_compte_deux_fois():
+def test_no_point_is_lost_nor_counted_twice():
     start, end = date(2020, 1, 1), date(2024, 12, 31)
     asked, fetch = _recording(10)
     points = walk(start, end, fetch)
@@ -80,7 +80,7 @@ def test_aucun_point_n_est_perdu_ni_compte_deux_fois():
 #  The adaptation, which is what makes one rule fit both shapes of series
 # --------------------------------------------------------------------------
 
-def test_une_serie_dense_reste_sur_des_fenetres_d_environ_un_an():
+def test_a_dense_series_keeps_windows_of_about_a_year():
     # Tarascon raw: 105 209 points a year, about 288 a day.
     asked, fetch = _recording(288)
     walk(date(2014, 1, 1), date(2024, 12, 31), fetch)
@@ -88,7 +88,7 @@ def test_une_serie_dense_reste_sur_des_fenetres_d_environ_un_an():
     assert all(300 <= w <= 400 for w in widths[:-1]), widths
 
 
-def test_une_serie_eparse_elargit_ses_fenetres():
+def test_a_sparse_series_widens_its_windows():
     # Tarascon most_valid: 6 077 points a year, about 17 a day. Sixteen years
     # of that is one window, so the whole period costs a handful of requests.
     asked, fetch = _recording(6077 / 365)
@@ -97,7 +97,7 @@ def test_une_serie_eparse_elargit_ses_fenetres():
     assert (asked[1][1] - asked[1][0]).days + 1 > 10 * 365
 
 
-def test_une_zone_sans_donnee_est_traversee_de_plus_en_plus_vite():
+def test_an_empty_stretch_is_crossed_faster_and_faster():
     asked, fetch = _recording(0)
     walk(date(1900, 1, 1), date(2026, 9, 20), fetch)
     widths = [(stop - begin).days + 1 for begin, stop in asked]
@@ -105,7 +105,7 @@ def test_une_zone_sans_donnee_est_traversee_de_plus_en_plus_vite():
     assert len(asked) < 20, widths
 
 
-def test_span_for_reste_dans_les_bornes():
+def test_span_for_stays_within_bounds():
     assert span_for(0) == MAX_WINDOW_DAYS
     assert span_for(-1) == MAX_WINDOW_DAYS
     assert span_for(10_000_000) == MIN_WINDOW_DAYS
@@ -117,18 +117,18 @@ def test_span_for_reste_dans_les_bornes():
 #  The quota, which the step exists to satisfy and nothing else
 # --------------------------------------------------------------------------
 
-def test_le_step_fait_toujours_passer_la_fenetre_sous_le_quota():
+def test_step_always_brings_the_window_under_the_quota():
     for days in (1, 30, 365, 366, 3650, MAX_WINDOW_DAYS):
         assert days * 1440 / _step_for(days) <= QUOTA_MAX, days
 
 
-def test_le_step_reste_a_un_sur_les_fenetres_courtes():
+def test_step_stays_at_one_on_short_windows():
     # 500 000 minutes is about 347 days; below that nothing needs to be raised.
     assert _step_for(1) == 1
     assert _step_for(347) == 1
 
 
-def test_le_step_monte_ce_qu_il_faut_sur_seize_ans():
+def test_step_rises_as_needed_over_sixteen_years():
     # The case that closed the question: a sixteen year window is refused with
     # a step of 1, and accepted from 17 on.
     days = 16 * 365
@@ -140,7 +140,7 @@ def test_le_step_monte_ce_qu_il_faut_sur_seize_ans():
 #  Cutting a window the server refused
 # --------------------------------------------------------------------------
 
-def test_la_coupe_en_deux_couvre_exactement_la_fenetre():
+def test_splitting_in_two_covers_the_window_exactly():
     from hydroportail.api import split_window
 
     for days in (2, 3, 4, 365, 366, 2922, 3000):
@@ -154,7 +154,7 @@ def test_la_coupe_en_deux_couvre_exactement_la_fenetre():
             assert (finish - begin).days + 1 < days
 
 
-def test_le_step_ne_depasse_jamais_ce_que_le_formulaire_accepte():
+def test_step_never_exceeds_what_the_form_accepts():
     # « Le pas de temps doit être compris entre 1 et 30 », dit la source. C'est
     # cette borne qui plafonne la largeur d'une fenêtre, pas le quota seul.
     from hydroportail.api import MAX_STEP, MAX_WINDOW_DAYS
@@ -164,7 +164,7 @@ def test_le_step_ne_depasse_jamais_ce_que_le_formulaire_accepte():
         _step_for(MAX_WINDOW_DAYS + 1000)
 
 
-def test_les_fenetres_restent_sous_la_largeur_maximale():
+def test_windows_stay_under_the_maximum_width():
     start, end = date(1900, 1, 1), date(2026, 9, 20)
     for density in (0, 0.5, 288):
         asked, fetch = _recording(density)
@@ -174,7 +174,7 @@ def test_les_fenetres_restent_sous_la_largeur_maximale():
             assert (finish - begin).days + 1 <= MAX_WINDOW_DAYS
 
 
-def test_le_step_vaut_toujours_un_hors_de_la_famille_instantanee():
+def test_step_is_always_one_outside_the_instantaneous_family():
     # Piège silencieux : dans la famille journalière, step est le « n » du nom.
     # QIXnJ avec step=20 rend des maxima sur vingt jours, soit un vingtième des
     # lignes, et rien dans la réponse ne le signale.

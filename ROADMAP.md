@@ -176,15 +176,6 @@ tableau ne montre : des campagnes de terrain par département et par année pour
 l'un, des arrêtés par zone et par année pour l'autre. Si la frise se révèle
 utile ici, elle est à reprendre là-bas.
 
-### Les variables locales, restées en français
-
-La v2.0.0 a mis à l'anglais ce par quoi on navigue : dossiers, fichiers,
-options, noms de fonctions et constantes de module. À l'intérieur des fonctions,
-les variables gardent leurs noms français, `lignes`, `fichier`, `dossier`,
-`restantes`. Aucune ne collisionne avec la prose, donc le renommage est
-mécanique, mais il n'apporte rien à qui lit le code de loin et il a été écarté
-au milieu d'une campagne en attente. À reprendre d'un bloc, quand rien ne tourne.
-
 ### Ramener les champs de texte du référentiel
 
 `commentaire_station`, `commentaire_influence_locale_station` et

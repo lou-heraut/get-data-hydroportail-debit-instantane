@@ -20,19 +20,19 @@ def _point(t, v, s, q=16, m=8, c=0):
 #  Conversion
 # --------------------------------------------------------------------------
 
-def test_les_valeurs_passent_du_litre_au_metre_cube():
+def test_values_go_from_litres_to_cubic_metres():
     frame = _to_frame("V720001002", [_point("2024-03-01T04:35:00Z", 2140000, 4)], False)
     assert frame.loc[0, "debit_m3s"] == 2140.0
 
 
-def test_les_horodatages_sont_lus_en_utc():
+def test_timestamps_are_read_as_utc():
     frame = _to_frame("V720001002", [_point("2024-03-01T04:35:00Z", 1000, 4)], False)
     stamp = frame.loc[0, "date_obs"]
     assert str(stamp.tz) == "UTC"
     assert (stamp.hour, stamp.minute) == (4, 35)
 
 
-def test_les_codes_tiennent_dans_un_entier_de_huit_bits():
+def test_codes_fit_in_an_eight_bit_integer():
     # Les valeurs rencontrées vont de 0 à 30 ; int8 va jusqu'à 127, et un
     # débordement se lirait comme un code négatif plausible.
     points = [_point("2024-03-01T00:00:00Z", 1000, 16, q=30, m=16, c=8)]
@@ -45,7 +45,7 @@ def test_les_codes_tiennent_dans_un_entier_de_huit_bits():
         assert frame[column].dtype == "int8"
 
 
-def test_une_passe_vide_donne_une_table_vide_mais_complete():
+def test_an_empty_pass_gives_an_empty_but_complete_table():
     frame = _to_frame("X", [], False)
     assert frame.empty
     assert "most_valid" in frame.columns
@@ -55,7 +55,7 @@ def test_une_passe_vide_donne_une_table_vide_mais_complete():
 #  Fusion des deux passes
 # --------------------------------------------------------------------------
 
-def test_un_horodatage_a_deux_niveaux_donne_deux_lignes():
+def test_a_timestamp_at_two_levels_gives_two_rows():
     raw = _to_frame("V", [_point("2024-03-01T01:55:00Z", 2170000, 4, q=16, m=8)], False)
     valid = _to_frame("V", [_point("2024-03-01T01:55:00Z", 2170000, 16, q=20, m=10)], True)
     merged = _merge_passes([raw, valid])
@@ -65,7 +65,7 @@ def test_un_horodatage_a_deux_niveaux_donne_deux_lignes():
     assert not merged.loc[merged.statut == 4, "most_valid"].any()
 
 
-def test_le_meme_point_rendu_par_les_deux_passes_ne_compte_qu_une_fois():
+def test_the_same_point_served_by_both_passes_counts_once():
     # Cas des périodes récentes : most_valid rend exactement les points bruts,
     # aux mêmes valeurs. Une seule ligne doit en sortir, marquée most_valid.
     point = _point("2026-09-15T10:00:00Z", 1050000, 4)
@@ -75,7 +75,7 @@ def test_le_meme_point_rendu_par_les_deux_passes_ne_compte_qu_une_fois():
     assert merged.loc[0, "statut"] == 4
 
 
-def test_deux_qualifications_sous_le_meme_statut_ne_s_ecrasent_pas():
+def test_two_qualifications_under_one_status_do_not_overwrite():
     # C'est la raison de dédoublonner sur la ligne entière : une même série
     # brute mêle q=16 et q=12, et une clé (station, date, statut) fusionnerait
     # ces deux points en un seul.
@@ -87,7 +87,7 @@ def test_deux_qualifications_sous_le_meme_statut_ne_s_ecrasent_pas():
     assert set(merged["qualification"]) == {12, 16}
 
 
-def test_la_fusion_trie_par_date_puis_statut():
+def test_the_merge_sorts_by_date_then_status():
     merged = _merge_passes([_to_frame("V", [
         _point("2024-03-02T00:00:00Z", 1, 4),
         _point("2024-03-01T00:00:00Z", 2, 16),
@@ -97,7 +97,7 @@ def test_la_fusion_trie_par_date_puis_statut():
     assert list(merged["statut"]) == [4, 16, 4]
 
 
-def test_aucune_passe_ne_donne_pas_d_erreur():
+def test_no_pass_at_all_raises_nothing():
     assert _merge_passes([]).empty
     assert _merge_passes([_to_frame("V", [], False)]).empty
 
@@ -106,7 +106,7 @@ def test_aucune_passe_ne_donne_pas_d_erreur():
 #  Couverture
 # --------------------------------------------------------------------------
 
-def test_la_couverture_compte_les_points_les_jours_et_les_ecarts():
+def test_coverage_counts_points_days_and_gaps():
     points = [_point(f"2024-03-01T{h:02d}:00:00Z", 1000, 4) for h in range(0, 6)]
     points += [_point("2024-03-02T00:00:00Z", 1000, 4)]
     table = _resolution(_to_frame("V", points, False))
@@ -118,7 +118,7 @@ def test_la_couverture_compte_les_points_les_jours_et_les_ecarts():
     assert row["intervalle_median_min"] == 60.0
 
 
-def test_une_annee_a_un_seul_point_n_invente_pas_de_resolution():
+def test_a_year_with_one_point_invents_no_resolution():
     # Aucun intervalle n'existe. Un zéro se lirait comme une résolution
     # parfaite, ce qui serait le contraire de la vérité.
     table = _resolution(_to_frame("V", [_point("2024-03-01T00:00:00Z", 1000, 4)], False))
@@ -127,17 +127,17 @@ def test_une_annee_a_un_seul_point_n_invente_pas_de_resolution():
     assert pd.isna(table.loc[0, "intervalle_p90_min"])
 
 
-def test_le_p90_separe_une_serie_reguliere_d_une_serie_trouee():
-    reguliere = [_point(f"2024-03-01T{h:02d}:00:00Z", 1, 4) for h in range(0, 10)]
-    trouee = [_point(f"2024-03-01T{h:02d}:00:00Z", 1, 16) for h in range(0, 9)]
-    trouee += [_point("2024-03-01T23:00:00Z", 1, 16)]
-    table = _resolution(_merge_passes([_to_frame("V", reguliere + trouee, False)]))
-    par_statut = table.set_index("statut")
-    assert par_statut.loc[4, "intervalle_median_min"] == par_statut.loc[4, "intervalle_p90_min"]
-    assert par_statut.loc[16, "intervalle_p90_min"] > par_statut.loc[16, "intervalle_median_min"]
+def test_the_p90_separates_a_regular_series_from_a_gappy_one():
+    regular = [_point(f"2024-03-01T{h:02d}:00:00Z", 1, 4) for h in range(0, 10)]
+    gappy = [_point(f"2024-03-01T{h:02d}:00:00Z", 1, 16) for h in range(0, 9)]
+    gappy += [_point("2024-03-01T23:00:00Z", 1, 16)]
+    table = _resolution(_merge_passes([_to_frame("V", regular + gappy, False)]))
+    by_status = table.set_index("statut")
+    assert by_status.loc[4, "intervalle_median_min"] == by_status.loc[4, "intervalle_p90_min"]
+    assert by_status.loc[16, "intervalle_p90_min"] > by_status.loc[16, "intervalle_median_min"]
 
 
-def test_les_statuts_et_les_annees_sont_comptes_separement():
+def test_statuses_and_years_are_counted_separately():
     points = [_point("2023-12-31T23:00:00Z", 1, 4), _point("2024-01-01T00:00:00Z", 1, 4),
               _point("2024-01-01T00:05:00Z", 1, 16)]
     table = _resolution(_to_frame("V", points, False))

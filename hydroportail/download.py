@@ -102,19 +102,19 @@ def inventory(
     logger.info("Inventaire de %d station(s), sans télécharger de chronique.", len(codes))
 
     maps: dict[str, list[dict[str, Any]]] = {}
-    refusees: list[str] = []
+    refused: list[str] = []
     for number, code in enumerate(codes, start=1):
         try:
             points = api.coverage_map(cache, code)
-        except (api.UnservedStation, api.UnknownStation) as erreur:
+        except (api.UnservedStation, api.UnknownStation) as error:
             # The service either ignores this code or fails on it whatever the
             # window. Writing it down as carrying no discharge would be a lie,
             # and stopping would lose the fifty others: it leaves the tables,
             # and the warning below is what the operator acts on.
-            refusees.append(code)
+            refused.append(code)
             logger.warning("  [%d/%d] %s : %s Elle sort de l'inventaire.",
                            number, len(codes), code,
-                           str(erreur).split(" : ", 1)[-1])
+                           str(error).split(" : ", 1)[-1])
             continue
         maps[code] = points
         first, last, days = _extent(points)
@@ -122,11 +122,11 @@ def inventory(
                     number, len(codes), code,
                     f"{days} jours, {first} à {last}" if days else "aucun débit instantané")
 
-    codes = [code for code in codes if code not in refusees]
+    codes = [code for code in codes if code not in refused]
     if not codes:
         raise api.APIError(
             "HydroPortail ne sert aucune des stations demandées : "
-            + ", ".join(refusees))
+            + ", ".join(refused))
 
     records = api.station_records(codes)
     missing = [code for code in codes if code not in records]
@@ -139,9 +139,9 @@ def inventory(
     coverage = _coverage_table(codes, maps)
     ref_codes = pd.DataFrame(schema.ref_codes_rows(), columns=schema.columns("ref_codes"))
 
-    if refusees:
+    if refused:
         logger.warning("  %d station(s) refusée(s) par le service, absente(s) des "
-                       "tables : %s", len(refusees), ", ".join(refusees))
+                       "tables : %s", len(refused), ", ".join(refused))
 
     tables = {"stations": stations, "coverage": coverage, "ref_codes": ref_codes}
     if write:
@@ -317,10 +317,10 @@ def summary(folder: str | Path) -> pd.DataFrame:
             logger.info("Les colonnes de résolution restent vides tant que les "
                         "chroniques n'ont pas été téléchargées.")
         else:
-            manquantes = int(coverage["nb_points"].isna().sum())
-            if manquantes:
+            missing_rows = int(coverage["nb_points"].isna().sum())
+            if missing_rows:
                 logger.info("%d ligne(s) sans résolution : station non "
-                            "téléchargée.", manquantes)
+                            "téléchargée.", missing_rows)
     return stations
 
 
@@ -332,31 +332,31 @@ def summary(folder: str | Path) -> pd.DataFrame:
 #  what someone launching it overnight needs to know.
 # --------------------------------------------------------------------------
 
-def _duree(secondes: float) -> str:
-    secondes = int(secondes)
-    if secondes < 60:
-        return f"{secondes} s"
-    if secondes < 3600:
-        return f"{secondes // 60} min {secondes % 60:02d} s"
-    return f"{secondes // 3600} h {(secondes % 3600) // 60:02d} min"
+def _duration(seconds: float) -> str:
+    seconds = int(seconds)
+    if seconds < 60:
+        return f"{seconds} s"
+    if seconds < 3600:
+        return f"{seconds // 60} min {seconds % 60:02d} s"
+    return f"{seconds // 3600} h {(seconds % 3600) // 60:02d} min"
 
 
-def _progres(status: str, begin: date, finish: date, rang: int, passes: int):
+def _progress(status: str, begin: date, finish: date, rank: int, passes: int):
     """Affiche chaque fenêtre avec l'avancement dans la station.
 
     L'avancement est mesuré sur la période couverte et non sur le nombre de
     fenêtres, puisque leur largeur suit la densité : une fenêtre peut valoir un
     an ou seize, et les compter donnerait une barre qui saute.
     """
-    total_jours = max(1, (finish - begin).days + 1)
+    total_days = max(1, (finish - begin).days + 1)
 
-    def afficher(debut: date, fin: date, n: int, cumul: int) -> None:
-        fait = (fin - begin).days + 1
-        part = (rang + fait / total_jours) / passes
+    def show(first_day: date, last_day: date, n: int, running_total: int) -> None:
+        done = (last_day - begin).days + 1
+        part = (rank + done / total_days) / passes
         logger.info("        %-11s %s -> %s  %9s pts   %3.0f %%",
-                    status, debut, fin, f"{n:,}".replace(",", " "), 100 * part)
+                    status, first_day, last_day, f"{n:,}".replace(",", " "), 100 * part)
 
-    return afficher
+    return show
 
 
 # --------------------------------------------------------------------------
@@ -465,20 +465,20 @@ def download(
                 len(working), " et ".join(statuses))
 
     resolutions = []
-    depart = time.monotonic()
+    started_at = time.monotonic()
     for number, row in enumerate(working.itertuples(), start=1):
         code = row.code_station
         begin = date.fromisoformat(row.date_debut_instantane)
         finish = date.fromisoformat(row.date_fin_instantane)
         logger.info("  [%d/%d] %s  %s  %s à %s", number, len(working), code,
                     str(row.libelle_station)[:34].ljust(34), begin, finish)
-        debut_station = time.monotonic()
+        station_start = time.monotonic()
 
         frames = []
-        for rang, status in enumerate(statuses):
+        for rank, status in enumerate(statuses):
             points = api.fetch_series(
                 cache, code, status, begin, finish,
-                on_progress=_progres(status, begin, finish, rang, len(statuses)))
+                on_progress=_progress(status, begin, finish, rank, len(statuses)))
             for point in points:
                 for kind in ("s", "q", "m", "c"):
                     unknown[kind].add(int(point.get(kind) or 0))
@@ -487,23 +487,23 @@ def download(
 
         merged = _merge_passes(frames)
         del frames
-        taille = 0.0
+        size = 0.0
         if write and not merged.empty:
             measurements.mkdir(parents=True, exist_ok=True)
             path = measurements / f"{code}.parquet"
             merged.to_parquet(path, compression="zstd", index=False)
-            taille = path.stat().st_size / 1e6
+            size = path.stat().st_size / 1e6
         logger.info("        %s lignes, %.2f Mo, %s",
-                    f"{len(merged):,}".replace(",", " "), taille,
-                    _duree(time.monotonic() - debut_station))
+                    f"{len(merged):,}".replace(",", " "), size,
+                    _duration(time.monotonic() - station_start))
         resolutions.append(_resolution(merged))
         del merged
 
-        restantes = len(working) - number
-        if restantes:
-            reste = (time.monotonic() - depart) / number * restantes
+        remaining = len(working) - number
+        if remaining:
+            remaining_time = (time.monotonic() - started_at) / number * remaining
             logger.info("  reste environ %s pour %d station(s)",
-                        _duree(reste), restantes)
+                        _duration(remaining_time), remaining)
 
     tables["coverage"] = _fill_resolution(tables["coverage"], resolutions)
 
@@ -526,13 +526,13 @@ def _write_datapackage(folder: Path, tables: dict[str, pd.DataFrame],
     stations = tables["stations"]
     coverage = tables["coverage"]
     carrying = stations[stations["porte_debit"].astype(bool)]
-    debut = carrying["date_debut_instantane"].min() if len(carrying) else None
-    fin = carrying["date_fin_instantane"].max() if len(carrying) else None
+    first_day = carrying["date_debut_instantane"].min() if len(carrying) else None
+    last_day = carrying["date_fin_instantane"].max() if len(carrying) else None
     coverage = {
         "stations_demandees": int(len(stations)),
         "stations_avec_debit": int(len(carrying)),
-        "date_debut": debut,
-        "date_fin": fin,
+        "date_debut": first_day,
+        "date_fin": last_day,
         "nb_points": int(coverage["nb_points"].sum(skipna=True) or 0),
         "statuts_rencontres": sorted(int(s) for s in coverage["statut"].unique()),
     }
@@ -557,7 +557,7 @@ def _fill_resolution(coverage: pd.DataFrame,
     measured = pd.concat(measured, ignore_index=True)
     keys = ["code_station", "annee", "statut"]
     merged = coverage.drop(columns=["nb_points", "intervalle_median_min",
-                                      "intervalle_p90_min"]).merge(
+                                    "intervalle_p90_min"]).merge(
         measured, on=keys, how="outer", suffixes=("_carte", ""))
     # The map labels a day by the status of its daily maximum, so a day holding
     # both raw and validated points is only counted once, under one of them.
