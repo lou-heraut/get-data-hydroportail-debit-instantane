@@ -5,6 +5,56 @@ Format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage
 correction, le deuxième pour un ajout qui ne casse rien, le premier quand le
 format des données livrées change.
 
+## [1.1.0] - 2026-09-22
+
+Un dépôt qui ne télécharge jamais tout ne produit pas un jeu de données, mais
+autant de petits jeux que de demandes. Cette version leur donne un nom, une
+place et une identité.
+
+### Les cas
+
+**Un cas est une liste de stations et la raison qui la justifie.** Il porte le
+même nom des deux côtés : `ressources/<cas>/` dit ce qu'on veut,
+`donnees_hydroportail/<cas>/` porte ce qu'on a obtenu, avec son propre
+`datapackage.json`. « J'ai utilisé le jeu `2026-09_eclusees-rmc` en v1.1.0 »
+désigne désormais quelque chose d'exact.
+
+Le contrat entre les deux tient en un fichier, `ressources/<cas>/stations.txt`,
+un code par ligne. Peu importe par quel chemin la liste est arrivée, un tableur
+traduit ou dix codes écrits à la main.
+
+Les trois scripts prennent un `--cas`, et `--racine` pour qui range ailleurs.
+Le dépôt naît avec deux cas : `2026-09_jeu-de-test`, les dix stations qui
+couvrent les cas limites, et `2026-09_eclusees-rmc`, la demande en cours.
+
+**Le cache des réponses monte à la racine**, au dessus des cas. Une station
+rapatriée pour une demande ne l'est plus jamais pour la suivante, ce qui compte
+double sur un service public et gratuit.
+
+### Ce qui a été corrigé
+
+**Une station refusée n'emporte plus la campagne.** Un HTTP 500 en famille
+journalière ne veut pas dire « fenêtre trop large » mais « je ne sais pas servir
+cette station » : le code ne découpe plus la fenêtre quinze fois pour aboutir au
+même échec, il lève `UnservedStation`. Un 404 devient `UnknownStation`, parce
+que Hub'Eau référence des stations que la route des séries ignore. Dans les deux
+cas l'inventaire note la station, la laisse hors des tables plutôt que de la
+déclarer sans débit, et continue.
+
+### Ce qui a été ajouté
+
+`preparer_liste.py` traduit une liste de codes reçue en codes de station
+vérifiés : les codes de site sont résolus par Hub'Eau, chaque candidate est
+sondée par la carte de couverture, et la table produite dit comment chaque
+station a été retenue et ce qui demande un regard humain. Les choix qu'un script
+ne peut pas faire seul vivent dans un `arbitrages.csv` typé, avec leur motif.
+
+### Incompatibilité
+
+Les tables ne sortent plus à la racine du dossier de données mais dans le
+sous-dossier de leur cas, et les fonctions `read`, `read_tables` et `summary`
+n'ont plus de dossier par défaut. Le schéma des tables, lui, n'a pas bougé.
+
 ## [1.0.0] - 2026-09-21
 
 Première version. Elle rapatrie les chroniques de débit instantané telles
