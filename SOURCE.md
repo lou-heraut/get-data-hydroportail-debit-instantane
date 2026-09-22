@@ -514,6 +514,58 @@ médian de 70 minutes et ne décrit pas une éclusée ; à Moûtiers elle en a 5
 points pour 8 906 bruts en mars 2024, donc elle la décrit. **Cela se décide
 station par station et année par année.**
 
+### Ce qu'une grille régulière trouverait sous elle
+
+Comptage du 22 septembre 2026 sur le `couverture.csv` du jeu de test, 341
+couples station x année x statut, huit stations, 1970 à 2026. Les parts sont
+pondérées par les jours de données, pour qu'une année de trois jours ne pèse pas
+autant qu'une année pleine.
+
+Part des jours dont le **pas médian** tient dans une grille donnée :
+
+| statut | période | <= 15 min | 16 à 60 min | > 60 min | jours |
+|---|---|---|---|---|---|
+| brut | avant 2013 | 100 % | 0 % | 0 % | 6 275 |
+| brut | 2013 et après | 88,8 % | 11,1 % | 0,1 % | 30 263 |
+| validé | avant 2013 | 3,7 % | 44,8 % | 51,6 % | 35 699 |
+| validé | 2013 et après | 37,9 % | 56,8 % | 5,3 % | 20 457 |
+
+Le brut d'avant 2013 ne contredit pas la profondeur mesurée plus haut : il
+n'existe qu'au Rhône à Tarascon, où il est à 5 minutes depuis 1994. Sur les sept
+autres stations, la première année de brut est 2013, 2019 ou 2021.
+
+Le **p90**, qui porte sur le pire décile, dit la même chose en plus sévère :
+
+| statut | période | <= 15 min | 16 à 60 min | > 60 min |
+|---|---|---|---|---|
+| brut | avant 2013 | 45,9 % | 54,1 % | 0 % |
+| brut | 2013 et après | 83,7 % | 16,0 % | 0,3 % |
+| validé | avant 2013 | 0 % | 3,0 % | 97,0 % |
+| validé | 2013 et après | 4,0 % | 28,3 % | 67,7 % |
+
+Le pré-validé, présent sur sept des huit stations, est le plus grossier des
+quatre statuts : 5 694 de ses 8 432 jours ont un pas médian supérieur à une
+heure. Le corrigé est trop rare pour compter, 461 jours en tout.
+
+Le pas médian de la série validée, par décennie et en station-années :
+
+```
+decennie  station-annees  pas median  dont <= 15 min
+    1970              10     309 min               0
+    1980              28     100 min               0
+    1990              35      54 min               0
+    2000              40      56 min               0
+    2010              45      27 min              14
+    2020              32      20 min              14
+```
+
+Ces chiffres ne disent pas qu'une grille de 15 minutes serait impossible avant
+2013. La série validée est une courbe à points de rupture, qui se lit en
+interpolant, et un pas médian de 100 minutes peut décrire fidèlement un débit
+qui ne bouge pas. Ils disent qu'avant 2013 une telle grille serait remplie par
+l'interpolation plutôt que par la mesure, et que le choix de l'accepter ou non
+est une décision d'analyse et non un réglage. Voir [ROADMAP.md](ROADMAP.md).
+
 ### Le poids sur disque, et le coût d'une campagne
 
 Mesuré sur le jeu de test complet, les deux passes, écrit en parquet zstd
@@ -536,9 +588,9 @@ TOTAL       8 447 816  47,00
 constantes et les horodatages réguliers. Le cache des réponses pèse 38 Mo pour
 le même jeu, soit moins que le produit.
 
-Par extrapolation, **de l'ordre de 400 Mo pour 68 stations**, et non le
-gigaoctet supposé. Le jeu de test penche vers les longues chroniques, donc
-l'estimation est plutôt haute.
+Par extrapolation, **de l'ordre de 6 Mo par station**, soit environ 300 Mo pour
+une cinquantaine, et non le gigaoctet supposé. Le jeu de test penche vers les
+longues chroniques, donc l'estimation est plutôt haute.
 
 Coût de la campagne, mesuré sur ces huit stations :
 
@@ -548,8 +600,8 @@ CPU              8 %                  on attend le serveur, c'est voulu
 memoire au pic   1,58 Go              une station a la fois, ne croit pas avec leur nombre
 ```
 
-Soit **environ trois heures et demie pour 68 stations**, ce qui confirme l'ordre
-de grandeur annoncé.
+Soit **environ deux heures et demie pour une cinquantaine de stations**, ce qui
+confirme l'ordre de grandeur annoncé.
 
 La mémoire n'est pas une contrainte. Le pic vient de la plus grosse station et
 non de leur nombre, puisqu'elles sont traitées une par une, et vaut environ 560

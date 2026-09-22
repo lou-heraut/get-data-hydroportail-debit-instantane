@@ -12,9 +12,12 @@ plutôt que recopiées.
 ## La demande, et le périmètre de la v1
 
 Une équipe travaille sur les cours d'eau à éclusées et a besoin des débits de
-68 stations en Rhône-Méditerranée-Corse, sur toute la durée des chroniques, à
-une résolution d'une heure ou moins et à pas de temps régulier. La liste des
-stations est détenue par l'équipe demandeuse.
+stations en Rhône-Méditerranée-Corse, sur toute la durée des chroniques, à pas
+de temps régulier. La liste a été reçue le 22 septembre 2026 : elle porte 51
+codes, et le pas visé est de 15 minutes, une heure au plus, constant. Le nombre
+de stations à télécharger n'est pas celui des codes reçus, la plupart étant des
+codes de site ; il sortira de l'inventaire. Le détail de la demande et des
+arbitrages qu'elle laisse ouverts est dans [ROADMAP.md](ROADMAP.md).
 
 **Le périmètre de la v1 est plus étroit que la demande, et c'est délibéré.** La
 v1 rapatrie la donnée telle que HydroPortail la diffuse, à son pas natif, pour
@@ -245,8 +248,8 @@ elle se remplit en deux temps.
 | `intervalle_p90_min` | la résolution dans le pire décile, donc l'irrégularité | après téléchargement |
 
 Sept colonnes, et chacune répond à une question qu'un analyste se pose avant de
-lancer un calcul. Elle reste petite : environ 7 000 lignes pour 68 stations sur
-toute leur vie.
+lancer un calcul. Elle reste petite : une centaine de lignes par station sur
+toute sa vie, quelques milliers pour la demande.
 
 **Les quatre premières colonnes s'obtiennent sans rien télécharger de lourd**,
 par la carte `QIXnJ` décrite dans [SOURCE.md](SOURCE.md), à raison d'une requête
@@ -425,14 +428,15 @@ la campagne réelle, ni de ce que les autres usagers ressentent. La règle
 adaptative couvre ces angles morts sans qu'on ait eu à les mesurer : si quoi que
 ce soit se dégrade, nos délais s'allongent d'eux-mêmes.
 
-Durée de la campagne complète qui en découle, pour 68 stations :
+Durée de la campagne complète qui en découle, pour une cinquantaine de
+stations :
 
 ```
-inventaire        68 requetes      ~5 min
-most_valid       ~200 requetes    ~15 min
-raw              ~816 requetes    ~2 h 15
+inventaire        50 requetes      ~4 min
+most_valid       ~150 requetes    ~11 min
+raw              ~600 requetes    ~1 h 40
                                   -------
-                                  ~2 h 40
+                                  ~2 h
 ```
 
 Aller deux fois plus vite ferait gagner une heure sur une opération qu'on fera
@@ -512,8 +516,7 @@ inutilisable sans identifiants.
 
 **Un courriel au SCHAPI n'est pas nécessaire à ce stade.** Le `User-Agent`
 nominatif est la forme proportionnée de la déclaration. La question se reposera
-avant la campagne complète sur les 68 stations, où un message devient une
-assurance bon marché.
+avant la campagne complète, où un message devient une assurance bon marché.
 
 ## Ce que le README devra dire, plutôt que ce que le script déciderait
 

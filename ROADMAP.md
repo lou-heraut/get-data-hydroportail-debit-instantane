@@ -12,46 +12,135 @@ Ce fichier ne garde que l'avenir. Il rétrécit à chaque version, voir la secti
 
 **C'est ce que la demande d'origine réclamait vraiment.** La v1 livre la donnée
 native, qui est le socle dont toute grille se déduit, mais elle ne répond pas
-encore à la question posée : une chronique à pas régulier, d'une heure ou moins,
-utilisable pour étudier les éclusées.
+encore à la question posée : une chronique à pas régulier, utilisable pour
+étudier les éclusées.
 
 Le point de départ a changé en cours de route. On comptait sur l'interpolation
 côté serveur, `Qln` avec un pas choisi ; la mesure montre qu'elle perd 78 % des
 points de rupture de la série validée, donc qu'elle dégrade la donnée au lieu de
 la servir. Cette voie est fermée.
 
+### Ce que le courriel du 22 septembre précise
+
+Reçu avec la liste des stations :
+
+> Pour les pas de temps, une autre étude a utilisé un pas de temps de 15 minutes
+> mais si ce n'est pas possible ça peut être plus long (jusqu'à une heure),
+> l'essentiel étant qu'il soit toujours le même pour chaque station.
+
+Trois choses en sortent :
+
+- **Une cible, 15 minutes, et un plafond, une heure.** La fourchette d'avant,
+  « une heure ou moins », devient un ordre de préférence.
+- **La régularité prime sur la finesse.** Une grille dont le pas suivrait la
+  densité réellement disponible aurait été la réponse la plus fidèle à la
+  donnée ; la demande l'écarte.
+- **Une ambiguïté à lever avant d'écrire quoi que ce soit.** « Toujours le même
+  pour chaque station » se lit de deux façons : un seul pas pour les 51
+  stations, ou un pas propre à chaque station mais constant sur toute sa
+  chronique. Les deux donnent un outil différent, et la première est la plus
+  contraignante, puisque la station la moins bien servie fixerait le pas de
+  toutes les autres.
+
+### Ce que les mesures disent de cette cible
+
+Le comptage est dans [SOURCE.md](SOURCE.md), section « Ce qu'une grille
+régulière trouverait sous elle ». Il tranche un point : **le pas natif ne
+soutient une grille de 15 minutes que sur le brut, et le brut ne commence qu'en
+2013** sur sept des huit stations du jeu de test. Avant 2013 il ne reste que la
+courbe validée, dont la moitié des jours ont un pas médian supérieur à une heure
+et dont le p90 dépasse l'heure dans 97 % des cas.
+
+Une grille unique à 15 minutes sur toute la chronique reste réalisable, mais
+elle serait portée par la mesure après 2013 et par l'interpolation avant. C'est
+l'arbitrage central, et il appartient à l'analyste et non au logiciel.
+
+### Les arbitrages qui restent
+
 **Ce sera un outil paramétrable et non une grille figée**, ce qui évite
 d'enfermer un choix scientifique dans un fichier et laisse l'analyste assumer le
-sien. Quatre points demandent un arbitrage qui n'est pas technique :
+sien. Cinq points demandent un arbitrage qui n'est pas technique :
 
-1. **La loi d'interpolation.** Linéaire par défaut, mais l'hydrogramme d'éclusée
-   a des fronts raides ; une interpolation linéaire sur un pas de deux heures
-   arrondit les angles et biaise toute métrique de gradient.
-2. **Le seuil au delà duquel on renonce à interpoler**, à confronter à la
-   distribution réelle des écarts, que `couverture.csv` donne désormais station
-   par station et année par année.
-3. **Les modalités d'application du seuil** : coupe franche laissant la grille
-   vide, ou marquage conservant la valeur avec un indicateur de confiance.
-4. **Ce qu'on publie à côté de la valeur.** L'idiome des dépôts voisins veut
+1. **La loi d'interpolation, qui ne pose pas la même question selon le statut.**
+   Sur le brut, qui est un échantillonnage régulier, interpoler linéairement un
+   front d'éclusée arrondit les angles et biaise toute métrique de gradient. Sur
+   le validé, qui est une courbe à points de rupture, l'interpolation linéaire
+   est la lecture que le producteur définit, et non une approximation ajoutée.
+   La même option n'a donc pas le même sens des deux côtés.
+2. **Le statut qui sert de source à la grille.** Le brut est dense mais récent ;
+   le validé est profond mais élagué selon ce qui intéressait l'hydromètre, qui
+   n'est pas la variation infra-horaire. Prendre le meilleur des deux à chaque
+   instant produit une chronique dont la nature change en cours de route, ce que
+   la v1 a refusé de faire point par point ; n'en garder qu'un seul ampute soit
+   le passé, soit la finesse.
+3. **Le seuil au delà duquel on renonce à interpoler.** Il décide concrètement
+   si les années d'avant 2013 sortent vides ou remplies. `couverture.csv` donne
+   la distribution réelle des écarts station par station et année par année,
+   c'est à elle qu'il faut le confronter.
+4. **Les modalités d'application du seuil** : coupe franche laissant la grille
+   vide, ou marquage conservant la valeur avec un indicateur de confiance. La
+   coupe franche est celle qui respecte la contrainte de constance, puisqu'elle
+   laisse la grille intacte et se contente de ne pas la remplir.
+5. **Ce qu'on publie à côté de la valeur.** L'idiome des dépôts voisins veut
    qu'une colonne dérivée s'accompagne d'une colonne qui dit jusqu'où la croire.
-   Ici ce serait l'écart en minutes à la mesure réelle la plus proche.
+   Ici ce serait l'écart en minutes à la mesure réelle la plus proche, qui rend
+   vérifiable ligne par ligne ce que le seuil a laissé passer.
 
 `QmnH`, le débit moyen horaire, reste à écarter pour ce sujet : une moyenne
 lisse précisément les montées et descentes qui font l'éclusée.
 
+### Les deux questions à poser à l'équipe demandeuse
+
+Elles conditionnent l'outil et ne se tranchent pas ici :
+
+1. Un seul pas pour les 51 stations, ou un pas par station constant dans le
+   temps ?
+2. Faut-il remonter avant 2013, sachant que la grille y serait portée par la
+   courbe validée et non par la mesure brute, ou l'étude se limite-t-elle à la
+   période où le pas natif soutient la cible ?
+
+Les trois autres arbitrages peuvent lui être soumis sous forme de proposition
+argumentée plutôt que de question ouverte.
+
 ## Les questions ouvertes
 
-### La liste des 68 stations
+### La liste des stations, reçue le 22 septembre 2026
 
-En attente. Tout a été vérifié sur dix stations choisies pour couvrir les cas
-limites, ce qui est solide, mais une vraie liste réserve des surprises : des
-codes de site glissés parmi les codes de station, des stations sans débit, des
-chroniques plus courtes qu'annoncé.
+`Liste_stations_hydro.xlsx`, **51 lignes et non 68** : cours d'eau, libellé,
+code, producteur, pour 25 cours d'eau du Doubs à la Corse. Ce que l'inspection
+du fichier montre, avant tout appel au service :
 
-Le premier geste est `--inventaire` sur les 68 codes, immédiat et sans
-téléchargement lourd. Le `couverture.csv` partiellement rempli qui en sort se
-transmet tel quel à la demandeuse, pour qu'elle choisisse ses stations avant
-qu'on engage les heures de téléchargement.
+- **45 des 51 codes sont des codes de site**, huit caractères, et non des codes
+  de station à dix. Six seulement sont des codes de station.
+- trois codes portent une espace au milieu : `W103 0003`, `W010 0001`,
+  `V126 0020`.
+- huit lignes n'ont pas de producteur, et un libellé de cours d'eau porte une
+  note de travail, « Jaur + Ru bureau ».
+- quatre des dix stations du jeu de test sont dans la liste au niveau site, dont
+  l'Arc à Aiguebelle, site à trois stations dont l'une est trouée à 58 %, et
+  l'Arc à Saint-Michel, dont la station évidente ne porte aucun débit instantané.
+
+Le piège est silencieux : HydroPortail sert un code de site sans broncher, en
+rendant la série de sa station de référence sans dire laquelle, et `inventory()`
+ne s'en protège pas aujourd'hui. Passer le fichier tel quel produirait un
+résultat d'apparence normale et d'origine inconnue.
+
+Ce qui reste à faire, dans l'ordre :
+
+1. **Ranger le fichier reçu** dans un dossier de ressources versionné, tel quel,
+   et produire à côté un CSV propre : codes normalisés, colonnes nommées, une
+   ligne par code demandé.
+2. **Traduire les codes de site en codes de station** par le référentiel
+   Hub'Eau, puis vérifier avec la carte de couverture que la station retenue
+   porte bien du débit instantané. Un site à plusieurs stations demande un choix
+   explicite et tracé.
+3. **Inventorier** les stations retenues, une requête de deux secondes chacune,
+   sans télécharger de chronique.
+4. **Rendre `couverture.csv` à l'équipe demandeuse** pour qu'elle choisisse ses stations et sa
+   période avant qu'on engage les heures de téléchargement.
+
+L'écart entre 51 et les 68 stations annoncées n'est pas expliqué, et vaut d'être
+posé.
 
 ### Le réseau RRSE
 
