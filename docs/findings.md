@@ -1,9 +1,10 @@
-# La source
+# Ce que nous avons constaté
 
-Ce que les services interrogés font réellement, établi par la mesure et non par
-la lecture de leur documentation. Ce fichier ne contient que des faits et la
-façon de les revérifier. Ce qu'on en déduit pour le produit est dans
-[DESIGN.md](DESIGN.md), ce qui reste à faire dans [ROADMAP.md](ROADMAP.md).
+Ce que les services interrogés font réellement, et ce que leur donnée contient,
+établi par la mesure et non par la lecture de leur documentation. Ce fichier ne
+contient que des faits et la façon de les revérifier. Ce qu'on a lu ailleurs est
+dans [references.md](references.md), ce qu'on en déduit pour le produit dans
+[design.md](design.md), ce qui reste à faire dans [ROADMAP.md](../ROADMAP.md).
 
 Chaque affirmation chiffrée ci-dessous a été obtenue sur le service réel. Les
 dates entre parenthèses disent quand, parce qu'un service change.
@@ -260,7 +261,7 @@ au lieu de la servir.
 Mesuré le 23 septembre 2026, du 1er au 7 mars 2024, en comparant le `QmnH`
 servi à des moyennes que nous calculons nous-mêmes sur la série `most_valid`
 déjà téléchargée. La documentation du service dit seulement « moyenne des
-débits instantanés », voir [REFERENCES.md](REFERENCES.md).
+débits instantanés », voir [references.md](references.md).
 
 Écart relatif au `QmnH` servi, pour quatre manières de faire une moyenne
 horaire, n = 1 :
@@ -457,7 +458,7 @@ réelle, ni sur ce que les autres usagers subissent pendant ce temps.
 La conclusion utile est ailleurs : **le facteur limitant n'est pas le débit de
 requêtes mais la taille des réponses**, dont la falaise est mesurée plus haut.
 C'est ce qui justifie une règle indexée sur le service plutôt qu'un chiffre de
-prudence, voir [DESIGN.md](DESIGN.md).
+prudence, voir [design.md](design.md).
 
 ### gzip
 
@@ -665,7 +666,7 @@ Ces chiffres ne disent pas qu'une grille de 15 minutes serait impossible avant
 interpolant, et un pas médian de 100 minutes peut décrire fidèlement un débit
 qui ne bouge pas. Ils disent qu'avant 2013 une telle grille serait remplie par
 l'interpolation plutôt que par la mesure, et que le choix de l'accepter ou non
-est une décision d'analyse et non un réglage. Voir [ROADMAP.md](ROADMAP.md).
+est une décision d'analyse et non un réglage. Voir [ROADMAP.md](../ROADMAP.md).
 
 ### Le poids sur disque, et le coût d'une campagne
 

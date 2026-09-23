@@ -4,31 +4,36 @@
 
 [README.md](README.md) présente le dépôt en deux minutes. Pour y travailler, il
 faut les quatre fichiers ci-dessous, à lire dans cet ordre avant de toucher à
-quoi que ce soit :
+quoi que ce soit. Trois sont dans `docs/`, qui porte ce que l'on sait et
+pourquoi on fait ainsi, **on constate, on lit, on décide** ; la racine ne garde
+que ce qu'on trouve dans tout dépôt.
 
 | fichier | ce qu'il contient | à quelle question il répond |
 |---|---|---|
-| [SOURCE.md](SOURCE.md) | les faits mesurés sur HydroPortail, Hub'Eau et Sandre | qu'est-ce que la source fait réellement ? |
-| [DESIGN.md](DESIGN.md) | les choix de conception et leurs raisons | qu'est-ce qu'on construit, et pourquoi ainsi ? |
+| [docs/findings.md](docs/findings.md) | ce que nous avons constaté, mesuré sur HydroPortail, Hub'Eau, Sandre et la donnée | qu'est-ce que la source fait réellement ? |
+| [docs/design.md](docs/design.md) | les choix de conception et leurs raisons | qu'est-ce qu'on construit, et pourquoi ainsi ? |
 | [ROADMAP.md](ROADMAP.md) | phases, questions ouvertes, journal | qu'est-ce qui reste à faire ? |
-| [REFERENCES.md](REFERENCES.md) | la littérature et les documentations lues, avec leurs passages | qu'ont établi les autres ? |
+| [docs/references.md](docs/references.md) | la littérature et les documentations lues, avec leurs passages | qu'ont établi les autres ? |
 
 **La règle de non-répétition est volontaire.** Un fait mesuré vit dans
-`SOURCE.md` et nulle part ailleurs ; une décision vit dans `DESIGN.md` et cite
-le fait sans le recopier. Si tu ajoutes quelque chose, respecte ce partage
+`docs/findings.md` et nulle part ailleurs ; une décision vit dans
+`docs/design.md` et cite le fait sans le recopier. Si tu ajoutes quelque chose, respecte ce partage
 plutôt que de tout redire au même endroit.
 
-**Le README et `DESIGN.md` ne disent pas la même chose** et ne se remplacent
-pas : le README dit comment se servir de l'outil et de ses données, `DESIGN.md`
-dit pourquoi ils sont faits ainsi. Quand une règle est énoncée dans le README,
-sa justification reste dans `DESIGN.md` et sa mesure dans `SOURCE.md`, avec un
-lien plutôt qu'une redite.
+**Le README et `docs/design.md` ne disent pas la même chose** et ne se
+remplacent pas : le README dit comment se servir de l'outil et de ses données,
+`docs/design.md` dit pourquoi ils sont faits ainsi. Quand une règle est énoncée
+dans le README, sa justification reste dans `docs/design.md` et sa mesure dans
+`docs/findings.md`, avec un lien plutôt qu'une redite.
 
-Chaque affirmation chiffrée de ces fichiers, `REFERENCES.md` excepté, est une
-**mesure** faite sur le service réel, pas une estimation ni une lecture de
-documentation. `REFERENCES.md` est justement ce qu'on a lu : une hypothèse de
-travail tant que la mesure ne l'a pas confirmée dans `SOURCE.md`. Ne pas en
-ajouter sans avoir vérifié, et ne pas en retirer sans avoir mesuré le contraire.
+Chaque affirmation chiffrée de ces fichiers, `docs/references.md` excepté, est
+une **mesure** faite sur le service réel, pas une estimation ni une lecture de
+documentation. `docs/references.md` est justement ce qu'on a lu : une hypothèse
+de travail tant que la mesure ne l'a pas confirmée dans `docs/findings.md`. Ne
+pas en ajouter sans avoir vérifié, et ne pas en retirer sans avoir mesuré le
+contraire. **C'est pourquoi constats et références ne se fusionnent pas** : un
+constat se refait et devient faux si le service change, une référence reste
+vraie de ce qu'elle décrivait.
 
 ## Cycle de vie des fichiers
 
@@ -41,10 +46,10 @@ Une phrase chacun, et c'est ce qui décide où une information doit aller :
 
 | fichier | ce qu'il est |
 |---|---|
-| `SOURCE.md` | ce qui est vrai indépendamment de nous, mesuré sur le service |
-| `DESIGN.md` | ce que nous avons décidé, et pourquoi |
+| `docs/findings.md` | ce que nous avons constaté, mesuré sur le service et sur la donnée |
+| `docs/design.md` | ce que nous avons décidé, et pourquoi |
 | `ROADMAP.md` | ce que nous n'avons pas encore fait |
-| `REFERENCES.md` | ce que d'autres ont établi, lu et non mesuré |
+| `docs/references.md` | ce que d'autres ont établi, lu et non mesuré |
 | `CHANGELOG.md` | ce que nous avons livré, version par version |
 | `README.md` | ce dont un utilisateur a besoin pour s'en servir |
 | `CLAUDE.md` | comment on travaille ici, et ce qu'il ne faut pas casser |
@@ -77,7 +82,7 @@ Seuls `README.md` et `stations.txt` sont obligatoires : un cas qu'on se donne
 soi-même n'a ni liste reçue, ni traduction, ni arbitrage.
 
 **Ce qui est vrai pour cette demande reste ici ; ce qui est vrai en soi monte
-dans `SOURCE.md`.** Qu'un producteur déclare une de ses stations défaillante est
+dans `docs/findings.md`.** Qu'un producteur déclare une de ses stations défaillante est
 un fait, il vaut pour tout le monde et se mesure une fois. Que l'on préfère pour
 autant la chronique longue à la station neuve est une décision propre à une
 étude, et elle vit dans son `arbitrations.csv`, avec son motif, parce que la
@@ -105,21 +110,21 @@ chaque version, pas grandir.
 
 ```
 en cours de route
-  une mesure              ->  SOURCE.md       et nulle part ailleurs
-  une reference lue       ->  REFERENCES.md   avec le passage, et ce qu'on en tire
-  une decision prise      ->  DESIGN.md       cite la mesure, ne la recopie pas
-  un revirement           ->  ROADMAP.md      journal, tant qu'il est frais
+  une mesure              ->  docs/findings.md     et nulle part ailleurs
+  une reference lue       ->  docs/references.md   avec le passage, et ce qu'on en tire
+  une decision prise      ->  docs/design.md       cite la mesure, ne la recopie pas
+  un revirement           ->  ROADMAP.md           journal, tant qu'il est frais
 
 a la livraison d'une version
-  les phases faites       ->  CHANGELOG.md    sous ## [x.y.z] - date
-  le raisonnement stable  ->  DESIGN.md       puis l'entree de journal disparait
-  ce qui reste            ->  ROADMAP.md      qui ne garde que l'avenir
+  les phases faites       ->  CHANGELOG.md         sous ## [x.y.z] - date
+  le raisonnement stable  ->  docs/design.md       puis l'entree de journal disparait
+  ce qui reste            ->  ROADMAP.md           qui ne garde que l'avenir
 ```
 
 Le journal de `ROADMAP.md` est une **zone d'attente, pas une archive**. Une
 entrée qui explique pourquoi on a changé d'avis a sa place tant que c'est frais ;
-dès que la décision est stable, son raisonnement appartient à `DESIGN.md` ou au
-README, et l'entrée se supprime. Les messages de commit gardent la trace fine,
+dès que la décision est stable, son raisonnement appartient à `docs/design.md`
+ou au README, et l'entrée se supprime. Les messages de commit gardent la trace fine,
 c'est leur rôle, et ils sont écrits pour ça.
 
 ### Les versions, et pourquoi on ne se contente pas de dater
@@ -153,7 +158,7 @@ attendre qu'on le demande :
 - proposer la rotation quand une phase de la roadmap est finie, plutôt que de
   laisser la roadmap enfler ;
 - signaler quand une entrée de journal a fait son temps et que son raisonnement
-  devrait passer dans `DESIGN.md` ;
+  devrait passer dans `docs/design.md` ;
 - proposer une version quand ce qui a été livré en mérite une ;
 - refuser d'ajouter une information dans le fichier le plus proche si sa place
   est ailleurs, et dire où elle va.
@@ -184,8 +189,8 @@ son pas natif, pas la chronique à pas régulier que l'étude des éclusées ré
 Le cadre a été posé le 23 septembre à partir de la littérature : on agrège par
 l'intégrale sur le pas, on n'échantillonne pas, et trois mesures restent à faire
 avant de figer la méthode. Le détail est dans [ROADMAP.md](ROADMAP.md), les
-références dans [REFERENCES.md](REFERENCES.md). L'équipe demandeuse n'a pas à
-trancher ces questions d'hydrologie, elles se tranchent ici.
+références dans [docs/references.md](docs/references.md). L'équipe demandeuse
+n'a pas à trancher ces questions d'hydrologie, elles se tranchent ici.
 
 ## Contexte
 
@@ -225,7 +230,7 @@ anglais.
 | en anglais | en français |
 |---|---|
 | noms de fonctions, de variables, de modules | messages affichés, aide des commandes |
-| noms de fichiers et de dossiers | README, SOURCE, DESIGN, ROADMAP, REFERENCES, CHANGELOG |
+| noms de fichiers et de dossiers | README, ROADMAP, CHANGELOG, tout `docs/` |
 | cibles de Makefile, options de ligne de commande | messages de commit, `AUTHORS.md` |
 | | noms de colonnes, hérités d'une source française |
 
@@ -239,7 +244,7 @@ de colonnes viennent d'un service français, pour des hydrologues français :
 nous aurions faite. Ils ne se traduisent donc jamais, pas plus que les valeurs
 anglaises d'HydroPortail, `raw` et `most_valid`, qui se recopient telles quelles.
 La règle est la traçabilité, pas une préférence de langue. Le détail est dans la
-section « Conventions d'écriture » de [DESIGN.md](DESIGN.md).
+section « Conventions d'écriture » de [docs/design.md](docs/design.md).
 
 Le README, les commits et `AUTHORS.md` s'écrivent en prose, pas en listes à
 puces télégraphiques.
@@ -310,7 +315,7 @@ retéléchargement.
 
 Ces valeurs et comportements sont mesurés sur le service réel. Les changer casse
 le téléchargement en silence, ou fait tomber HydroPortail. Le détail et les
-chiffres sont dans [SOURCE.md](SOURCE.md).
+chiffres sont dans [docs/findings.md](docs/findings.md).
 
 - **Un HTTP 500 veut dire « fenêtre trop large », pas « serveur en panne ».** Y
   répondre par un recul exponentiel et plusieurs tentatives ferait replanter le
@@ -370,7 +375,7 @@ Le `Makefile` abrège ce qui se répète, `make tests`, `make controler`,
 
 Les dix codes ne sont pas recopiés ici : ils sont dans
 `cases/2026-09_test-set/stations.txt`, et ce que chacun illustre dans
-[SOURCE.md](SOURCE.md).
+[docs/findings.md](docs/findings.md).
 
 Attendu sur ces dix stations, et **en croissance d'un jour par jour** pour
 celles qui sont en service :

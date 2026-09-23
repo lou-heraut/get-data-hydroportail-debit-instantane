@@ -3,13 +3,13 @@
 Ce fichier rassemble ce que la littérature et les documentations disent des
 questions que ce dépôt se pose, avec la référence et, quand c'est possible, le
 passage exact. Il a été ouvert le 23 septembre 2026 pour préparer l'outil de
-rééchantillonnage, décrit dans [ROADMAP.md](ROADMAP.md).
+rééchantillonnage, décrit dans [ROADMAP.md](../ROADMAP.md).
 
-**Rien ici n'est une mesure.** C'est ce qui le sépare de [SOURCE.md](SOURCE.md) :
+**Rien ici n'est une mesure.** C'est ce qui le sépare de [findings.md](findings.md) :
 une affirmation lue ici est une hypothèse de travail sur notre source, pas un
 fait établi sur elle. Quand on la vérifie sur le service, le résultat va dans
-`SOURCE.md` et cite la référence ; quand une décision s'appuie dessus, elle vit
-dans [DESIGN.md](DESIGN.md) et renvoie ici.
+`findings.md` et cite la référence ; quand une décision s'appuie dessus, elle vit
+dans [design.md](design.md) et renvoie ici.
 
 ## Agréger une série instantanée : l'intégrale, par la méthode des trapèzes
 
@@ -64,7 +64,7 @@ servait comme débits à pas variable :
 > several hours.
 
 C'est l'information qui manquait pour lire la série validée, décrite dans
-[SOURCE.md](SOURCE.md) comme « une courbe à points de rupture ». **Un écart de
+[findings.md](findings.md) comme « une courbe à points de rupture ». **Un écart de
 trois heures entre deux points ne dit pas que l'instrument mesurait toutes les
 trois heures, il dit que la courbe ne s'écarte pas de plus de 5 % d'un segment
 entre les deux.** Intégrer cette courbe sur quinze minutes ne crée donc pas
@@ -210,4 +210,4 @@ les points se resserrent là où le débit bouge. Elle ne dit pas non plus de qu
 statut `QmnH` est calculé, ni ce que vaut `step` pour cette grandeur. Tout cela
 a été mesuré le 23 septembre 2026 : c'est une intégrale par la méthode des
 trapèzes, horodatée au début de l'heure, arrondie à trois chiffres
-significatifs, et absente en brut. Voir [SOURCE.md](SOURCE.md).
+significatifs, et absente en brut. Voir [findings.md](findings.md).

@@ -20,7 +20,7 @@ LICENSE = {
 }
 
 #: Landing page of the source. The series themselves come from the AJAX route
-#: of the station page, which is documented in SOURCE.md.
+#: of the station page, which is documented in docs/findings.md.
 SOURCE_URL = "https://hydro.eaufrance.fr/"
 
 
@@ -43,7 +43,7 @@ SOURCE_URL = "https://hydro.eaufrance.fr/"
 #  holds neither code 8 nor 10; 72 "Code de continuité du point" holds only 1
 #  and 2; 508 "Qualification de la donnée de l'observation" has no "Douteuse".
 #  Match on the code values, then check against the labels Hub'Eau serves in
-#  observations_tr. Full account in SOURCE.md.
+#  observations_tr. Full account in docs/findings.md.
 # --------------------------------------------------------------------------
 
 #: Sandre nomenclature backing each of the four codes.
@@ -129,7 +129,7 @@ def unknown_codes(seen: dict[str, set[int]]) -> list[tuple[str, int]]:
 #  Column names are never translated from their source. Those coming from
 #  Hub'Eau keep its spelling, accents included; those we derive are named in
 #  French like the rest; `raw` and `most_valid` keep their English names
-#  because they are HydroPortail's own product names. See DESIGN.md.
+#  because they are HydroPortail's own product names. See docs/design.md.
 # --------------------------------------------------------------------------
 
 def _f(name: str, kind: str, description: str, **extra: Any) -> dict[str, Any]:

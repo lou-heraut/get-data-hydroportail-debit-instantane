@@ -5,7 +5,7 @@ pour représenter le réseau. Ce n'est pas une demande extérieure : c'est le je
 sur lequel le code a été mis au point, sur lequel tournent les exemples du
 README et la procédure de vérification de [CLAUDE.md](../../CLAUDE.md).
 
-Ce que chacune illustre est dans [SOURCE.md](../../SOURCE.md), section « Le jeu
+Ce que chacune illustre est dans [docs/findings.md](../../docs/findings.md), section « Le jeu
 de test », et n'est pas recopié ici. En deux mots : une éclusée alpine, une
 éclusée de plaine, un grand fleuve régulé, une station sans `s=16`, la plus
 longue chronique connue, un site à trois stations, une couverture trouée à

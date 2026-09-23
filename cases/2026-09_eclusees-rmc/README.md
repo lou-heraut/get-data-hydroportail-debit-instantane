@@ -24,6 +24,6 @@ Pour régénérer la table depuis la liste :
 python prepare_list.py --case 2026-09_eclusees-rmc
 ```
 
-Ce que la traduction a donné est mesuré dans [SOURCE.md](../../SOURCE.md),
+Ce que la traduction a donné est mesuré dans [docs/findings.md](../../docs/findings.md),
 section « Ce qu'une liste réelle a donné ». Ce qui reste à faire est dans
 [ROADMAP.md](../../ROADMAP.md).

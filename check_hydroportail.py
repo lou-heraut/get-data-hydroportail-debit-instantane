@@ -205,7 +205,7 @@ def check_codes(folder: Path) -> bool:
                     unknown_values.add((kind, int(value)))
     if unknown_values:
         logger.error("   codes absents de ref_codes.csv : %s", sorted(unknown_values))
-        logger.error("   la nomenclature Sandre a bougé, voir SOURCE.md")
+        logger.error("   la nomenclature Sandre a bougé, voir docs/findings.md")
         return False
     logger.info("   tous les codes rencontrés sont décrits")
     return True

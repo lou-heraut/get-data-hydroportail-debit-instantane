@@ -3,7 +3,7 @@
 """Talking to HydroPortail, and to the Hub'Eau referential.
 
 This module is the only place that knows how the source behaves. Everything it
-does is grounded in a measurement written down in SOURCE.md; the comments below
+does is grounded in a measurement written down in docs/findings.md; the comments below
 say which one, because several of these rules look wrong until you know why.
 
 It returns lists of dictionaries. All the shaping happens in
@@ -107,7 +107,7 @@ class UnservedStation(APIError):
     single day, on QIXnJ as on Q, while the station's own page answers 200 and
     an unknown station code answers 404. The 500 therefore says neither "too
     wide" nor "does not exist", and no window is small enough to get around it.
-    See SOURCE.md.
+    See docs/findings.md.
     """
 
 
@@ -121,7 +121,7 @@ _session: requests.Session | None = None
 #: exactly this, which keeps our duty cycle at half the server's time whatever
 #: the size of the requests and whatever its load. Calibration found no rate at
 #: which the service slows down, so rather than invent a constant we index on
-#: its own behaviour. See SOURCE.md.
+#: its own behaviour. See docs/findings.md.
 _last_elapsed = 1.0
 
 

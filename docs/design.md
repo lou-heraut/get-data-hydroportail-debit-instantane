@@ -1,12 +1,13 @@
 # Ce que le logiciel fait, et pourquoi
 
 Les choix de conception et leurs raisons. Les faits qui les fondent sont dans
-[SOURCE.md](SOURCE.md) et ne sont pas recopiés ici : ce fichier y renvoie. Ce
-qui n'est pas encore tranché est dans [ROADMAP.md](ROADMAP.md).
+[findings.md](findings.md) et ne sont pas recopiés ici : ce fichier y renvoie,
+comme il renvoie à [references.md](references.md) pour la littérature. Ce qui
+n'est pas encore tranché est dans [ROADMAP.md](../ROADMAP.md).
 
 Tout ce qui suit est tranché. Ce fichier répond à « pourquoi ainsi » ; le
-[README](README.md) répond à « comment s'en servir ». Une règle énoncée
-là-bas a sa justification ici et sa mesure dans [SOURCE.md](SOURCE.md), reliées
+[README](../README.md) répond à « comment s'en servir ». Une règle énoncée
+là-bas a sa justification ici et sa mesure dans [findings.md](findings.md), reliées
 plutôt que recopiées.
 
 ## La demande, et le périmètre de la v1
@@ -17,7 +18,7 @@ de temps régulier. La liste a été reçue le 22 septembre 2026 : elle porte 51
 codes, et le pas visé est de 15 minutes, une heure au plus, constant. Le nombre
 de stations à télécharger n'est pas celui des codes reçus, la plupart étant des
 codes de site ; il sortira de l'inventaire. Le détail de la demande et des
-arbitrages qu'elle laisse ouverts est dans [ROADMAP.md](ROADMAP.md).
+arbitrages qu'elle laisse ouverts est dans [ROADMAP.md](../ROADMAP.md).
 
 **Le périmètre de la v1 est plus étroit que la demande, et c'est délibéré.** La
 v1 rapatrie la donnée telle que HydroPortail la diffuse, à son pas natif, pour
@@ -261,7 +262,7 @@ lancer un calcul. Elle reste petite : une centaine de lignes par station sur
 toute sa vie, quelques milliers pour la demande.
 
 **Les quatre premières colonnes s'obtiennent sans rien télécharger de lourd**,
-par la carte `QIXnJ` décrite dans [SOURCE.md](SOURCE.md), à raison d'une requête
+par la carte `QIXnJ` décrite dans [findings.md](findings.md), à raison d'une requête
 de deux secondes par station. Les trois dernières demandent la donnée elle-même
 et restent vides tant qu'elle n'a pas été téléchargée.
 
@@ -316,7 +317,7 @@ pas livrer les colonnes.
 **Sa forme.** Une ligne par valeur : `type` (`s`, `q`, `m`, `c`), `code`,
 `libelle`, `definition`, `nomenclature_sandre`, `source`. Les quatre
 nomenclatures sont 510, 515, 512 et 923, et le piège des nomenclatures
-homonymes est documenté dans [SOURCE.md](SOURCE.md) : l'appariement se fait sur
+homonymes est documenté dans [findings.md](findings.md) : l'appariement se fait sur
 les valeurs de code, jamais sur le titre.
 
 **La table est figée dans `schema.py`**, pas rapatriée à chaque exécution.
@@ -428,7 +429,7 @@ de fatigue. La falaise HTTP 500 a déjà été rencontrée une fois,
 involontairement, et on n'en cherche pas une seconde.
 
 **Le service n'a pas bronché**, de 11 à 39 requêtes par minute, chiffres dans
-[SOURCE.md](SOURCE.md). Il n'y a donc pas de seuil mesuré à respecter, et c'est
+[findings.md](findings.md). Il n'y a donc pas de seuil mesuré à respecter, et c'est
 précisément ce qui rend la règle adaptative préférable à une constante : quand
 on ne connaît pas la limite, la seule prudence solide est de s'indexer sur le
 comportement observé du service plutôt que d'inventer une marge.
@@ -644,6 +645,6 @@ sans trou ni recouvrement » se vérifie en cinq lignes sur une entrée
 synthétique, et ne se vérifie pratiquement pas sur des données réelles.
 
 Tout ce qui demande le réseau est traité autrement, comme chez les voisins :
-des valeurs de référence dans [CLAUDE.md](CLAUDE.md), et
+des valeurs de référence dans [CLAUDE.md](../CLAUDE.md), et
 `check_hydroportail.py` qui rejoue le cache `.cache/` pour vérifier que
 tout point reçu se retrouve dans `measurements/`.

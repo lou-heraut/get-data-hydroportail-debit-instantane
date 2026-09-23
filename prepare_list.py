@@ -8,7 +8,7 @@ sont pour l'essentiel des codes de **site** et non des codes de **station**. Or
 les chroniques vivent sur les stations, et un code de site interrogé tel quel
 rend la série de sa station de référence sans dire laquelle. Passer le tableur
 à `--file` donnerait donc un jeu d'apparence normale et d'origine inconnue.
-Voir la section « Site et station » de SOURCE.md.
+Voir la section « Site et station » de docs/findings.md.
 
 Ce script fait trois choses, dans cet ordre :
 

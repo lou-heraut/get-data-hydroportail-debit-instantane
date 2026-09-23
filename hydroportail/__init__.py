@@ -7,7 +7,7 @@ Source: the AJAX route of the HydroPortail station page, the public channel of
 
 Hub'Eau cannot serve this data: its real time endpoint only goes back one
 rolling month, and its historical endpoint stops at the daily time step. See
-SOURCE.md for the measurements behind every choice made here.
+docs/findings.md for the measurements behind every choice made here.
 
 Typical use, once the download layer exists:
 

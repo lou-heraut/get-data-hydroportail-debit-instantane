@@ -2,8 +2,8 @@
 
 État au 22 septembre 2026 : **v2.0.0 livrée**. Ce que chaque version contient est
 dans [CHANGELOG.md](CHANGELOG.md), pourquoi elle est faite ainsi dans
-[DESIGN.md](DESIGN.md), et ce que la source fait réellement dans
-[SOURCE.md](SOURCE.md).
+[docs/design.md](docs/design.md), et ce que la source fait réellement dans
+[docs/findings.md](docs/findings.md).
 
 Ce fichier ne garde que l'avenir. Il rétrécit à chaque version, voir la section
 « Cycle de vie des fichiers » de [CLAUDE.md](CLAUDE.md).
@@ -22,7 +22,7 @@ montre qu'elle perd 78 % des points de rupture de la série validée.
 ### Le cadre, tel qu'il se dessine au 23 septembre
 
 Trois choses ont changé la manière de poser le problème. Les références sont
-dans [REFERENCES.md](REFERENCES.md).
+dans [docs/references.md](docs/references.md).
 
 - **On agrège, on n'échantillonne pas.** Nos collègues hydrologues le demandent,
   et la norme de l'OMM le définit : la valeur d'un pas est la moyenne pondérée
@@ -59,7 +59,7 @@ discontinue.
 
 Sur le jeu de test d'abord, qui est fixe et suffit à voir ce qui est
 atteignable, puis sur les éclusées. Chaque résultat ira dans
-[SOURCE.md](SOURCE.md).
+[docs/findings.md](docs/findings.md).
 
 Une première est faite : **`QmnH`, le débit moyen horaire d'HydroPortail, est
 l'intégrale par la méthode des trapèzes** de la série `most_valid`, validé ou
@@ -100,7 +100,7 @@ et ne descend pas sous l'heure : ce n'est pas un produit.
 
 Le cas `2026-09_eclusees-rmc` est prêt : sa liste est traduite, ses arbitrages
 sont posés et ses 47 stations sont inventoriées. Ce que la traduction et
-l'inventaire ont donné est mesuré dans [SOURCE.md](SOURCE.md), section « Ce
+l'inventaire ont donné est mesuré dans [docs/findings.md](docs/findings.md), section « Ce
 qu'une liste réelle a donné » ; comment les trois stations ambiguës ont été
 tranchées est dans l'`arbitrations.csv` du cas, avec le motif de chacune.
 
@@ -189,7 +189,7 @@ libres et longs, dont il faudrait choisir la place et la troncature.
 
 ## Ce qui est tranché, et qu'on ne rouvre pas
 
-Le raisonnement de chacun est dans [DESIGN.md](DESIGN.md). Cette liste n'est là
+Le raisonnement de chacun est dans [docs/design.md](docs/design.md). Cette liste n'est là
 que pour éviter de les rediscuter par oubli.
 
 - **Une seule table de faits**, pas de chronique séparée : ce serait une vue, et

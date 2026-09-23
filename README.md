@@ -417,14 +417,15 @@ pas bougé, et que l'intégrité référentielle tient.
 
 | fichier | ce qu'il contient |
 |---|---|
-| [SOURCE.md](SOURCE.md) | ce que HydroPortail, Hub'Eau et le Sandre font réellement, mesuré |
-| [DESIGN.md](DESIGN.md) | pourquoi le jeu est construit ainsi |
+| [docs/findings.md](docs/findings.md) | ce que HydroPortail, Hub'Eau et le Sandre font réellement, mesuré |
+| [docs/references.md](docs/references.md) | ce que la littérature en dit, lu et non mesuré |
+| [docs/design.md](docs/design.md) | pourquoi le jeu est construit ainsi |
 | [ROADMAP.md](ROADMAP.md) | ce qui reste à faire |
 | [CHANGELOG.md](CHANGELOG.md) | ce que chaque version a apporté |
 | [CLAUDE.md](CLAUDE.md) | les conventions du dépôt et les pièges à ne pas « corriger » |
 
-`SOURCE.md` est le plus utile à qui veut réutiliser la source ailleurs : il
-documente une route publique mais non documentée, ses limites réelles, et les
+`docs/findings.md` est le plus utile à qui veut réutiliser la source ailleurs :
+il documente une route publique mais non documentée, ses limites réelles, et les
 quatre nomenclatures Sandre qui donnent leur sens aux codes de qualité.
 
 Ce dépôt suit la convention `get-data-<plateforme>-<jeu de données>` et reprend
