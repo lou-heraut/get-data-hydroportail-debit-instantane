@@ -66,10 +66,11 @@ chaque pas de sortie garde du brut ». Il en découle trois choses à construire
    porté, avec le minimum et le maximum, et un pas vide sinon.
 
 La série validée, qui seule existe avant 2013, relève d'une autre logique,
-celle de la tolérance. Si la voie du validé est retenue, voir le point d'étape
-plus bas, ce critère ne vaut plus que pour la queue brute de `most_valid`, et la
-table de support porte, pour la partie validée, les jours certifiés par
-`QIXnJ` et la densité du validé.
+celle de la tolérance. Avec le partage des rôles du point d'étape plus bas, ce
+critère change de fonction : sur la partie validée, il ne remplit plus un pas
+mais dit le pas de l'instrument, qui borne le pas de sortie ; il ne remplit un
+pas que sur la queue brute de `most_valid`. La table de support porte en plus
+les jours certifiés par `QIXnJ` et la densité du validé.
 
 ### Les produits envisagés
 
@@ -162,30 +163,39 @@ voies, confrontées à la littérature de
 | B. le brut | dense, pas élagué | provisoire au sens de l'OMM ; artefacts, dont certains non marqués, qui deviennent de fausses éclusées ; commence en 2013, à 60 minutes par endroits ; ses gradients bruités ne se comparent pas aux seuils de Courret |
 | C. le meilleur des deux, pas par pas | le plus d'information apparente | une chronique dont la nature change sans cesse ; aucune référence ne le fait, et la v1 l'a déjà refusé point par point |
 
-**La voie A est celle vers laquelle tout converge**, et c'est la proposition à
-trancher :
+**La voie qui se défend est un partage des rôles : le brut dit ce qu'on peut
+se permettre, le validé dit combien.** Formulée ainsi le 23 septembre, elle
+reste à acter avant de passer dans [docs/design.md](docs/design.md).
 
-- **la source est `most_valid`**, telle que le producteur l'arbitre, avec pour
-  chaque pas le statut dont il vient, pour que la queue provisoire se voie ;
-- **le brut n'est pas une source mais un témoin** : il sert à mesurer ce que le
-  validé garde, jamais à le compléter ;
-- **ce qui dit si un pas est rempli dépend du statut.** Sur la partie validée,
-  la carte `QIXnJ` : un jour certifié se remplit, un trou reste vide. Sur la
-  queue brute, l'écart entre points voisins, comme mesuré sur le brut ;
-- **ce qui dit jusqu'où croire les fronts est la densité du validé**, points
-  par jour, que la mesure 3 relie au gradient gardé.
+- **Les valeurs viennent du validé**, `most_valid` tel que le producteur
+  l'arbitre, avec pour chaque pas le statut dont il vient, pour que la queue
+  provisoire se voie. Jamais une valeur du brut là où le validé existe : ce
+  sont justement celles que le producteur n'a pas certifiées.
+- **Le brut apporte deux informations que le validé n'a pas.** Le pas de
+  l'instrument, qui borne par en dessous le pas de sortie honnête, même sur la
+  partie validée : sur l'Ain en 2013 à 2016, où le capteur stockait une valeur
+  par heure, une courbe validée ne s'agrège pas honnêtement à quinze minutes.
+  Et ce que le validé a perdu, station par station et année par année : là où
+  il est dense, presque rien, gradient à 94 % ou plus et valeurs à moins de
+  1 % ; là où il est clairsemé, on sait de combien il atténue les fronts.
+- **Un pas de sortie est donc rempli** si le jour est certifié par `QIXnJ` ou
+  couvert par la queue brute, si l'instrument enregistrait au moins aussi fin
+  que le pas là où le brut le dit, et il porte la densité du validé, qui dit
+  jusqu'où croire ses fronts.
+- **Avant 2013, sans brut**, seules restent la densité du validé et la carte
+  `QIXnJ`, et la notice le dit.
 
-Les risques qu'on accepte ainsi, et qu'il faut écrire dans la notice : des
-gradients sous-estimés d'un tiers environ les jours où le validé compte moins
-de dix points, et une queue récente de nature différente, provisoire. Ce qui
-reste à trancher avec cette voie : la période ancienne, les relevés d'échelle
-qui ne sont pas une courbe élaguée, et le pas de sortie, que la densité du
-validé et la table de support aideront à choisir.
+Les risques acceptés, à écrire dans la notice : des gradients atténués
+d'environ un tiers les jours où le validé compte dix points ou moins, une queue
+récente provisoire, et des écarts de valeur au-delà de 5 % sur une minorité de
+pas, dont on ne sait pas séparer l'élagage de la correction. Restent à
+trancher la période ancienne, les relevés d'échelle qui ne sont pas une courbe
+élaguée, et le pas de sortie, que la table de support aidera à choisir.
 
 ### Ce qui reste ouvert après ces mesures
 
-- **Le statut qui sert de source.** Voir le point d'étape ci-dessus : la voie
-  du validé est proposée, elle reste à trancher.
+- **Le statut qui sert de source.** Voir le point d'étape ci-dessus : le
+  partage des rôles entre brut et validé est formulé, il reste à acter.
 - **La période ancienne.** Les relevés d'échelle, une lecture par jour, ne sont
   pas une courbe élaguée : il faudra une limite, par date ou par écart entre
   points.

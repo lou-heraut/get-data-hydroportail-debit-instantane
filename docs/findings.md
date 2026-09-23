@@ -387,6 +387,26 @@ plus de 100       1 727        1,00             1,00            0,92           0
   validé ; 424 m³/s en brut sur l'Ain le 24 décembre 2017, contre 113. **Ces
   artefacts-là ne sont pas marqués douteux.**
 
+En valeur, sur les mêmes 14 525 journées certifiées, écart relatif entre les
+moyennes à quinze minutes du validé et du brut :
+
+```
+points valides    jours   pas a 5 % pres   ecart median   pire ecart du jour
+par jour                                                   median      p90
+ 0 a 10           3 362          84 %          1,29 %       5,05 %   22,3 %
+11 a 25           4 589          93 %          0,48 %       2,47 %   14,0 %
+26 a 50           2 136          90 %          0,49 %       2,50 %   17,1 %
+51 a 100          2 352          92 %          0,32 %       1,49 %   11,2 %
+plus de 100       2 086          99 %          0,09 %       0,57 %    2,7 %
+```
+
+La grande majorité des pas tient à 5 % près, ce qui s'accorde avec la
+tolérance d'élagage de la Banque Hydro, voir [references.md](references.md).
+Les écarts plus grands mêlent l'élagage, la correction des valeurs par la
+validation et les artefacts qu'elle retire, que cette comparaison ne sait pas
+séparer. Ils sont les plus forts à W107403001 et à Fréjus, où la moitié des
+journées ont un pire écart de plus de 13 %.
+
 ## Les limites du service
 
 ### Le quota annoncé
