@@ -43,6 +43,31 @@ dans [docs/references.md](docs/references.md).
 Une grille régulière entre quinze minutes et une heure, dont la méthode est
 écrite et justifiée, est l'objectif.
 
+### La direction retenue pour le brut, le 23 septembre
+
+**Un pas de sortie n'est rempli que s'il est porté par la mesure** : aucun
+écart entre deux points bruts voisins qui le chevauche ne dépasse sa durée. Le
+critère se juge pas par pas, sans découper la chronique en régimes, et c'est ce
+qui garantit qu'on n'agrège jamais plus fin que ce que le capteur a enregistré.
+Le constat qui le fonde, et ce qu'il garde sur le jeu de test à 15, 30 et
+60 minutes, est dans [docs/findings.md](docs/findings.md), section « Ce que
+chaque pas de sortie garde du brut ». Il en découle trois choses à construire :
+
+1. **Une table de support par station, année et pas candidat**, la part de la
+   chronique que chaque pas garde. C'est elle qui justifie auprès de l'équipe
+   demandeuse le pas retenu : elle montre ce qu'on garde, ce qu'on perd, et
+   pourquoi un pas plus fin aurait inventé de la donnée.
+2. **Le choix du pas pour un ensemble de stations**, par optimisation sur cette
+   table : parmi les pas candidats, celui qui maximise la donnée gardée sur
+   l'ensemble, sous la contrainte d'un même pas partout. Le critère exact reste
+   à écrire, total de pas gardés, ou nombre de station-années au-dessus d'un
+   seuil, et il se discute sur les éclusées.
+3. **L'agrégation elle-même**, l'intégrale par les trapèzes sur chaque pas
+   porté, avec le minimum et le maximum, et un pas vide sinon.
+
+La série validée, qui seule existe avant 2013, relève d'une autre logique,
+celle de la tolérance, et reste à traiter.
+
 ### Les produits envisagés
 
 | produit | définition | à quoi il sert |
@@ -72,9 +97,10 @@ et ne descend pas sous l'heure : ce n'est pas un produit.
 1. **La tolérance d'élagage actuelle.** Comparer le brut au validé interpolé là
    où les deux existent, en sachant que l'écart mélange la correction des
    valeurs, 0,44 % en médiane à Tarascon, et l'élagage.
-2. **Ce que coûte l'agrégation.** Sur le brut à cinq minutes : gradient maximal
-   et nombre d'éclusées détectées selon les critères de Courret, en natif, à
-   quinze minutes et à une heure.
+2. **Ce que coûte l'agrégation.** Sur le brut, séparément selon son pas
+   d'origine, qui va de cinq à soixante minutes : gradient maximal et nombre
+   d'éclusées détectées selon les critères de Courret, en natif, à quinze
+   minutes et à une heure. D'abord sur quelques journées tracées, pour voir.
 3. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
    rapport aux trous visibles, pour savoir s'il suffit à décider où la grille
    reste vide.

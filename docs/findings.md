@@ -668,6 +668,78 @@ qui ne bouge pas. Ils disent qu'avant 2013 une telle grille serait remplie par
 l'interpolation plutôt que par la mesure, et que le choix de l'accepter ou non
 est une décision d'analyse et non un réglage. Voir [ROADMAP.md](../ROADMAP.md).
 
+### Le pas du brut change au cours de la vie d'une station
+
+« Le brut est à cinq minutes » n'est vrai que des années récentes. Pas médian
+entre deux points bruts consécutifs, en minutes, lu dans le `coverage.csv` du
+jeu de test le 23 septembre 2026 :
+
+```
+annees      V271201001  V720001002  W011001001  W107403001  X031001001  Y532501001
+1994-2004            .           6           .           .           .           .
+2005-2012            .           5           .           .           .           .
+2013                60           5          60           3          15          15
+2014                60          15          60          60          15          15
+2015-2016           60     15 puis 5        30          30          15          15
+2017-2021            6           5    6 puis 5      3 a 6           15          15
+2022-2026            5           5           5           5          15          15
+```
+
+W283201001 et W107403003, dont le brut commence en 2019 et 2021, passent de 6 à
+5 minutes. Trois lectures :
+
+- **le pas se resserre par paliers**, de 60 à 30 puis 6 et 5 minutes sur l'Ain
+  et l'Isère, et n'atteint cinq minutes qu'en 2021 ou 2022 ;
+- **certaines stations ne descendent jamais sous quinze minutes**, Embrun et
+  Fréjus depuis le début de leur brut ;
+- **la médiane annuelle cache ce qui se passe dans l'année.** À Tarascon de
+  1994 à 2004, la médiane est de 6 minutes mais le p90 de 30 : un écart sur dix
+  dure une demi-heure ou plus.
+
+C'est le pas **stocké** qu'on lit ici. L'instrument peut mesurer plus souvent
+et ne stocker qu'une valeur sur plusieurs, la donnée ne permet pas de le savoir.
+
+### Ce que chaque pas de sortie garde du brut
+
+Le critère qui répond à la règle « ne jamais agréger plus fin que la mesure »
+se juge **pas par pas, et non par année** : un pas de sortie de durée D est
+porté par le brut quand aucun écart entre deux points bruts consécutifs qui le
+chevauche ne dépasse D. Il n'y a alors aucune rupture de régime à détecter, les
+changements en cours d'année sont pris en compte d'eux-mêmes, et une valeur
+agrégée ne repose jamais sur un intervalle que le capteur a sauté.
+
+Part des pas de chaque année civile ainsi portés, mesurée le 23 septembre 2026
+sur le jeu de test, en % :
+
+```
+                    sortie a 15 min          sortie a 30 min          sortie a 60 min
+                  2013 2015 2017 2019 2024  2013 2015 2017 2019 2024  2013 2015 2017 2019 2024
+V271201001 Ain       0    0   48   99  100     0    0   48   99  100    10  100   99   99  100
+V720001002 Rhone   100  100  100   99  100   100  100  100  100  100   100  100  100  100  100
+W011001001 Isere     0    0   16   98  100     0   98   95   98  100    11  100   95   99  100
+W107403001           1    0   16   87    6     1   98  100   87    6    12  100  100   87    7
+X031001001 Durance  12   53   92   98   69    12   53   92   99   59    12   50   91   98   99
+Y532501001 Frejus   11  100   98   99  100    11  100   98   99  100    11   99   98   99  100
+```
+
+Tarascon est porté à 74 % ou plus dès 2005 à quinze minutes, à 88 % ou plus à
+trente. Une année partielle, 2013 pour la plupart, et 2026 qui plafonne à
+72 %, ne dit rien du pas. Ce que le tableau montre :
+
+- **le pas de sortie décide de la part de chronique qu'on garde sans rien
+  inventer.** L'Ain n'est porté à trente minutes qu'à partir de 2018, mais à
+  une heure dès 2014 ; l'Isère gagne trois ans en passant de quinze à trente
+  minutes ;
+- **un trou se voit aussi bien qu'un pas grossier.** W107403001, dont le brut
+  est à cinq minutes, tombe à 0 % de 2020 à 2023 parce que sa couverture est
+  trouée ; Embrun perd un tiers de ses pas de quinze minutes en 2024 et 2025 par
+  des écarts de trente à quarante-cinq minutes, qu'une heure absorbe.
+
+Ce critère ne vaut que pour le brut. La série validée est une courbe certifiée
+à une tolérance près et ne se juge pas sur l'écart entre ses points, voir
+« La série validée est une courbe à points de rupture » plus haut et
+[references.md](references.md).
+
 ### Le poids sur disque, et le coût d'une campagne
 
 Mesuré sur le jeu de test complet, les deux passes, écrit en parquet zstd
