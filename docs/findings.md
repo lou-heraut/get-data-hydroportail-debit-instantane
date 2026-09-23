@@ -228,6 +228,16 @@ valide      481 points, pas median 70 min, codes s=16 q=20 m=10 c=0
 Les 481 horodatages validés sont tous présents dans le brut, mais **196 portent
 une valeur différente**, écart relatif médian 0,444 % et maximal 2,871 %.
 
+### La validation retire les artefacts que le brut garde
+
+W283201001, 27 novembre 2024 : un point brut isolé à 298 m³/s à 10:15, entre
+deux valeurs à 16,3 m³/s cinq minutes avant et après. Le producteur l'a marqué
+`q = 12`, douteux, quand ses voisins sont à `q = 16`. La série validée ne le
+porte pas : son point de 10:40 vaut 16,3 m³/s, comme tout ce qui l'entoure.
+Agrégé tel quel, ce point fait une moyenne de 63 m³/s sur son pas de quinze
+minutes, soit une éclusée qui n'a pas eu lieu. Un cas, relevé en traçant des
+journées d'exemple ; la fréquence de ces artefacts reste à mesurer.
+
 ### La série validée est une courbe à points de rupture
 
 Ce n'est pas « la série brute dont on aurait gardé les bons points », c'est la

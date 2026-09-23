@@ -183,11 +183,14 @@ Ce n'est donc pas un chantier de fond : les modifications sont a priori des
 corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
 en fin de [ROADMAP.md](ROADMAP.md).
 
-Reste ouvert, et **pas à trancher seul**, l'outil de rééchantillonnage, qui est
+Le rééchantillonnage a commencé : `hydroportail/aggregate.py` agrège une
+série sur des pas réguliers, testé et vérifié contre le `QmnH` d'HydroPortail,
+mais n'est branché sur aucune commande. Reste ouvert, et **pas à trancher
+seul**, le reste de l'outil de rééchantillonnage, qui est
 ce que la demande d'origine réclamait vraiment : la v1 livre la donnée native, à
 son pas natif, pas la chronique à pas régulier que l'étude des éclusées réclame.
 Le cadre a été posé le 23 septembre à partir de la littérature : on agrège par
-l'intégrale sur le pas, on n'échantillonne pas, et trois mesures restent à faire
+l'intégrale sur le pas, on n'échantillonne pas, et quatre mesures restent à faire
 avant de figer la méthode. Le détail est dans [ROADMAP.md](ROADMAP.md), les
 références dans [docs/references.md](docs/references.md). L'équipe demandeuse
 n'a pas à trancher ces questions d'hydrologie, elles se tranchent ici.
@@ -310,6 +313,10 @@ source .python_env/bin/activate
 sous-dossier par cas y porte les tables, et `data/.cache/` le
 cache des réponses reçues, commun à tous les cas et supprimable au prix d'un
 retéléchargement.
+
+Les figures d'`explore/` demandent matplotlib et plotly, qui ne sont pas des
+dépendances de l'outil : `pip install -e ".[explore]"`. Elles s'écrivent dans
+`data/_exploration/`, ignoré lui aussi, et se refont à la demande.
 
 ## Pièges à ne pas « corriger »
 

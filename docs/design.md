@@ -613,9 +613,11 @@ download_hydroportail.py      ~130 l   interface en ligne de commande
 hydroportail/api.py           ~500 l   HTTP, politesse, fenetrage, cache, Hub'Eau
 hydroportail/schema.py        ~390 l   colonnes, types, vocabulaire, datapackage
 hydroportail/download.py      ~580 l   orchestration, ecriture, relecture
+hydroportail/aggregate.py     ~120 l   agregation sur des pas reguliers
 prepare_list.py               ~490 l   traduction d'une liste recue en stations
 check_hydroportail.py         ~260 l   non-perte et integrite
-tests/                        ~330 l   les fonctions pures
+tests/                        ~420 l   les fonctions pures
+explore/                      ~260 l   figures d'exploration, hors de l'outil
 ```
 
 `api.py` porte aussi les quelques lignes qui interrogent le référentiel des

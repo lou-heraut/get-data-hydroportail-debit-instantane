@@ -26,6 +26,8 @@ dependencies = [
 validation = ["frictionless>=5"]
 # Tests des fonctions pures : fenêtrage, fusion, couverture, conversion
 dev = ["pytest>=8"]
+# Figures d'exploration du dossier explore/, jamais nécessaires à l'outil
+explore = ["matplotlib>=3.8", "plotly>=5"]
 
 [project.urls]
 Homepage = "https://github.com/lou-heraut/get-data-hydroportail-debit-instantane"

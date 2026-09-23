@@ -80,6 +80,38 @@ Chaque pas porterait la part de sa durée réellement couverte et le plus grand
 écart entre deux points utilisés, et resterait vide là où la chronique est
 discontinue.
 
+### Ce qui est en place
+
+- **`hydroportail/aggregate.py`**, l'agrégation d'une série sur des pas
+  réguliers : moyenne par intégrale, minimum et maximum bornes comprises, plus
+  grand écart entre points voisins et drapeau `pas_porte`. Testé, et vérifié
+  contre le `QmnH` d'HydroPortail, qu'il reproduit à l'arrondi près. Il n'est
+  encore branché sur aucune commande.
+- **`explore/`**, deux scripts de figures, hors de l'outil, installés par
+  `pip install -e ".[explore]"` et écrivant dans `data/_exploration/` :
+  `plot_days.py`, quelques journées à 15 et 60 minutes en PNG et PDF, et
+  `plot_year.py`, une station et une année à parcourir dans le navigateur, brut
+  et validé côte à côte.
+
+### Ce que les journées d'exemple ont montré, le 23 septembre
+
+Quatre journées du jeu de test, tracées par `explore/plot_days.py`. Ce sont des
+exemples choisis, pas une mesure, mais ils orientent la suite :
+
+- **le pic résiste, le gradient non.** Sur un front de dix minutes à Moûtiers,
+  la moyenne à 15 minutes garde le pic à 0,5 % près mais perd 60 % du gradient
+  maximal, celle à 60 minutes 84 %. Sur la montée de deux heures de l'Ain, 15
+  minutes garde presque tout ;
+- **le maximum du pas garde le pic intact**, ce qui justifie de livrer le trio
+  moyenne, minimum et maximum plutôt que la moyenne seule ;
+- **agréger au pas natif lisse déjà** : à Embrun, brut à 15 minutes, la moyenne
+  à 15 minutes est celle des deux points qui bornent le pas, et perd un quart du
+  gradient. Le pas de sortie doit dépasser le pas natif, pas seulement l'égaler ;
+- **un artefact du brut devient une fausse éclusée.** Un point isolé à
+  298 m³/s entre deux valeurs à 16,3 donne une moyenne de 63 m³/s sur son pas.
+  Le producteur l'a marqué douteux et la validation l'a retiré, voir
+  [docs/findings.md](docs/findings.md).
+
 ### Ce qu'il faut mesurer avant de figer quoi que ce soit
 
 Sur le jeu de test d'abord, qui est fixe et suffit à voir ce qui est
@@ -94,29 +126,43 @@ un point toutes les trois heures, et `QmnH` devient la référence contre
 laquelle vérifier notre propre calcul au pas horaire. Il n'existe pas en brut
 et ne descend pas sous l'heure : ce n'est pas un produit.
 
-1. **La tolérance d'élagage actuelle.** Comparer le brut au validé interpolé là
-   où les deux existent, en sachant que l'écart mélange la correction des
-   valeurs, 0,44 % en médiane à Tarascon, et l'élagage.
-2. **Ce que coûte l'agrégation.** Sur le brut, séparément selon son pas
-   d'origine, qui va de cinq à soixante minutes : gradient maximal et nombre
-   d'éclusées détectées selon les critères de Courret, en natif, à quinze
-   minutes et à une heure. D'abord sur quelques journées tracées, pour voir.
-3. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
+1. **Ce que coûte l'agrégation, en chiffres.** Les journées ont montré le
+   mécanisme ; reste le bilan sur toute la période brute, séparément selon le
+   pas d'origine, de cinq à soixante minutes : perte de gradient maximal et
+   d'amplitude à 15, 30 et 60 minutes, puis nombre d'éclusées détectées selon
+   les critères de Courret.
+2. **Les points douteux du brut.** Combien sont marqués `q = 12`, combien sont
+   des artefacts isolés comme celui de W283201001, et ce que la validation en
+   fait. C'est ce qui décidera s'il faut les écarter avant d'agréger.
+3. **Le validé tient-il les fronts ?** C'est la question qui peut tout
+   simplifier. La série validée est corrigée et débarrassée des artefacts ; si
+   son élagage garde les fronts d'éclusée, elle peut porter l'agrégation fine
+   partout où elle existe, sans les pièges du brut. Sur les périodes où les
+   deux existent : gradient maximal, pic et nombre d'éclusées, du brut et du
+   validé, et l'écart entre leurs moyennes, qui dira aussi la tolérance de
+   l'élagage actuel. La densité du validé varie beaucoup : en 2024, 62 000
+   points pour 105 000 bruts à Moûtiers, mais 7 000 à Pont-d'Ain.
+4. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
    rapport aux trous visibles, pour savoir s'il suffit à décider où la grille
    reste vide.
 
 ### Ce qui reste ouvert après ces mesures
 
 - **Le statut qui sert de source.** `most_valid` enchaîne validé, pré-validé et
-  brut par blocs ; si la mesure 2 montre que le validé tient les fronts, il peut
-  porter toute la chronique, sinon il faudra deux régimes, avant et après 2013,
-  et le dire.
+  brut par blocs, et sa partie la plus récente est du brut, artefacts compris.
+  La mesure 3 dira si le validé peut porter toute la chronique, sinon il faudra
+  deux régimes, avant et après 2013, et le dire.
 - **La période ancienne.** Les relevés d'échelle, une lecture par jour, ne sont
   pas une courbe élaguée : il faudra une limite, par date ou par écart entre
   points.
 - **Quinze minutes ou une heure.** Le brut récent soutient quinze minutes ; le
-  validé ancien, selon la mesure 2, peut-être aussi. Rien n'interdit de livrer
+  validé ancien, selon la mesure 3, peut-être aussi. Rien n'interdit de livrer
   les deux pas.
+- **Des figures dans le processus.** Celles d'`explore/` ont servi à comprendre ;
+  une version par station, la couverture et quelques journées en PDF, la
+  chronique entière à parcourir en HTML, aiderait à choisir le pas et à le
+  justifier auprès de l'équipe demandeuse. À décider une fois la méthode
+  figée : ce qu'elles montrent, et si elles accompagnent le livrable.
 - **L'incertitude.** Une question à poser à Benjamin Renard : que devient
   l'incertitude quand on intègre une courbe élaguée à une tolérance donnée.
 
