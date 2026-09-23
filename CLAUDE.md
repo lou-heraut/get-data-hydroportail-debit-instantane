@@ -3,7 +3,7 @@
 ## Par où commencer
 
 [README.md](README.md) présente le dépôt en deux minutes. Pour y travailler, il
-faut les trois fichiers ci-dessous, à lire dans cet ordre avant de toucher à
+faut les quatre fichiers ci-dessous, à lire dans cet ordre avant de toucher à
 quoi que ce soit :
 
 | fichier | ce qu'il contient | à quelle question il répond |
@@ -11,6 +11,7 @@ quoi que ce soit :
 | [SOURCE.md](SOURCE.md) | les faits mesurés sur HydroPortail, Hub'Eau et Sandre | qu'est-ce que la source fait réellement ? |
 | [DESIGN.md](DESIGN.md) | les choix de conception et leurs raisons | qu'est-ce qu'on construit, et pourquoi ainsi ? |
 | [ROADMAP.md](ROADMAP.md) | phases, questions ouvertes, journal | qu'est-ce qui reste à faire ? |
+| [REFERENCES.md](REFERENCES.md) | la littérature et les documentations lues, avec leurs passages | qu'ont établi les autres ? |
 
 **La règle de non-répétition est volontaire.** Un fait mesuré vit dans
 `SOURCE.md` et nulle part ailleurs ; une décision vit dans `DESIGN.md` et cite
@@ -23,8 +24,10 @@ dit pourquoi ils sont faits ainsi. Quand une règle est énoncée dans le README
 sa justification reste dans `DESIGN.md` et sa mesure dans `SOURCE.md`, avec un
 lien plutôt qu'une redite.
 
-Chaque affirmation chiffrée de ces fichiers est une **mesure** faite sur le
-service réel, pas une estimation ni une lecture de documentation. Ne pas en
+Chaque affirmation chiffrée de ces fichiers, `REFERENCES.md` excepté, est une
+**mesure** faite sur le service réel, pas une estimation ni une lecture de
+documentation. `REFERENCES.md` est justement ce qu'on a lu : une hypothèse de
+travail tant que la mesure ne l'a pas confirmée dans `SOURCE.md`. Ne pas en
 ajouter sans avoir vérifié, et ne pas en retirer sans avoir mesuré le contraire.
 
 ## Cycle de vie des fichiers
@@ -41,11 +44,12 @@ Une phrase chacun, et c'est ce qui décide où une information doit aller :
 | `SOURCE.md` | ce qui est vrai indépendamment de nous, mesuré sur le service |
 | `DESIGN.md` | ce que nous avons décidé, et pourquoi |
 | `ROADMAP.md` | ce que nous n'avons pas encore fait |
+| `REFERENCES.md` | ce que d'autres ont établi, lu et non mesuré |
 | `CHANGELOG.md` | ce que nous avons livré, version par version |
 | `README.md` | ce dont un utilisateur a besoin pour s'en servir |
 | `CLAUDE.md` | comment on travaille ici, et ce qu'il ne faut pas casser |
 
-Si une information ne rentre dans aucun des six, c'est probablement qu'elle
+Si une information ne rentre dans aucun des sept, c'est probablement qu'elle
 appartient à un commentaire dans le code ou à un message de commit.
 
 ### Les cas, un dossier chacun
@@ -102,6 +106,7 @@ chaque version, pas grandir.
 ```
 en cours de route
   une mesure              ->  SOURCE.md       et nulle part ailleurs
+  une reference lue       ->  REFERENCES.md   avec le passage, et ce qu'on en tire
   une decision prise      ->  DESIGN.md       cite la mesure, ne la recopie pas
   un revirement           ->  ROADMAP.md      journal, tant qu'il est frais
 
@@ -165,8 +170,9 @@ Deux cas existent. `2026-09_test-set`, les dix stations qui couvrent les cas
 limites, est téléchargé en entier et ses cinq contrôles passent : c'est sur lui
 que tourne la procédure de vérification ci-dessous. `2026-09_eclusees-rmc`, la
 demande en cours, a sa liste traduite, ses arbitrages posés et ses 47 stations
-inventoriées ; **son téléchargement reste à lancer**, environ 280 Mo et deux
-heures et demie.
+inventoriées ; **son téléchargement a été lancé le 23 septembre**, environ
+280 Mo et deux heures et demie. S'il a été interrompu, la même commande le
+reprend : ce qui est en cache n'est pas redemandé.
 
 Ce n'est donc pas un chantier de fond : les modifications sont a priori des
 corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
@@ -175,8 +181,11 @@ en fin de [ROADMAP.md](ROADMAP.md).
 Reste ouvert, et **pas à trancher seul**, l'outil de rééchantillonnage, qui est
 ce que la demande d'origine réclamait vraiment : la v1 livre la donnée native, à
 son pas natif, pas la chronique à pas régulier que l'étude des éclusées réclame.
-Cinq arbitrages et deux questions à poser sont décrits dans
-[ROADMAP.md](ROADMAP.md).
+Le cadre a été posé le 23 septembre à partir de la littérature : on agrège par
+l'intégrale sur le pas, on n'échantillonne pas, et trois mesures restent à faire
+avant de figer la méthode. Le détail est dans [ROADMAP.md](ROADMAP.md), les
+références dans [REFERENCES.md](REFERENCES.md). L'équipe demandeuse n'a pas à
+trancher ces questions d'hydrologie, elles se tranchent ici.
 
 ## Contexte
 
@@ -216,7 +225,7 @@ anglais.
 | en anglais | en français |
 |---|---|
 | noms de fonctions, de variables, de modules | messages affichés, aide des commandes |
-| noms de fichiers et de dossiers | README, SOURCE, DESIGN, ROADMAP, CHANGELOG |
+| noms de fichiers et de dossiers | README, SOURCE, DESIGN, ROADMAP, REFERENCES, CHANGELOG |
 | cibles de Makefile, options de ligne de commande | messages de commit, `AUTHORS.md` |
 | | noms de colonnes, hérités d'une source française |
 
@@ -317,7 +326,9 @@ chiffres sont dans [SOURCE.md](SOURCE.md).
   journalier c'est le « n » du nom : `QIXnJ` avec `step=20` rend les maxima sur
   vingt jours, soit un vingtième des lignes, **sans que rien ne le signale**.
   Hors famille instantanée, `step` reste à 1. L'erreur a déjà été commise et
-  n'a été vue que grâce à une valeur de référence.
+  n'a été vue que grâce à une valeur de référence. **`QmnH` fait exception
+  dans la famille instantanée** : son `step` est aussi le « n », et
+  `_step_for` le traiterait à tort comme un quota.
 - **`step` est borné à 1..30**, ce qui plafonne une fenêtre à 10 416 jours.
 - **Ne jamais déduire la fenêtre du quota.** L'ordre est : estimer les points
   attendus, en déduire la fenêtre en visant environ 100 000 points, puis mettre

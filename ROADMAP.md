@@ -1,6 +1,6 @@
 # Ce qui reste à faire
 
-État au 21 septembre 2026 : **v1.0.0 livrée**. Ce que cette version contient est
+État au 22 septembre 2026 : **v2.0.0 livrée**. Ce que chaque version contient est
 dans [CHANGELOG.md](CHANGELOG.md), pourquoi elle est faite ainsi dans
 [DESIGN.md](DESIGN.md), et ce que la source fait réellement dans
 [SOURCE.md](SOURCE.md).
@@ -13,89 +13,86 @@ Ce fichier ne garde que l'avenir. Il rétrécit à chaque version, voir la secti
 **C'est ce que la demande d'origine réclamait vraiment.** La v1 livre la donnée
 native, qui est le socle dont toute grille se déduit, mais elle ne répond pas
 encore à la question posée : une chronique à pas régulier, utilisable pour
-étudier les éclusées.
+étudier les éclusées. Le pas visé est de quinze minutes, une heure au plus, et
+le même d'un bout à l'autre.
 
-Le point de départ a changé en cours de route. On comptait sur l'interpolation
-côté serveur, `Qln` avec un pas choisi ; la mesure montre qu'elle perd 78 % des
-points de rupture de la série validée, donc qu'elle dégrade la donnée au lieu de
-la servir. Cette voie est fermée.
+L'interpolation côté serveur, `Qln` avec un pas choisi, est fermée : la mesure
+montre qu'elle perd 78 % des points de rupture de la série validée.
 
-### Ce que la demande a précisé le 22 septembre
+### Le cadre, tel qu'il se dessine au 23 septembre
 
-Le pas visé est de quinze minutes ; une heure au plus si ce n'est pas possible ;
-et surtout le même pas d'un bout à l'autre. Trois choses en sortent :
+Trois choses ont changé la manière de poser le problème. Les références sont
+dans [REFERENCES.md](REFERENCES.md).
 
-- **Une cible, 15 minutes, et un plafond, une heure.** La fourchette d'avant,
-  « une heure ou moins », devient un ordre de préférence.
-- **La régularité prime sur la finesse.** Une grille dont le pas suivrait la
-  densité réellement disponible aurait été la réponse la plus fidèle à la
-  donnée ; la demande l'écarte.
-- **Une ambiguïté à lever avant d'écrire quoi que ce soit.** « Toujours le même
-  pour chaque station » se lit de deux façons : un seul pas pour les 51
-  stations, ou un pas propre à chaque station mais constant sur toute sa
-  chronique. Les deux donnent un outil différent, et la première est la plus
-  contraignante, puisque la station la moins bien servie fixerait le pas de
-  toutes les autres.
+- **On agrège, on n'échantillonne pas.** Nos collègues hydrologues le demandent,
+  et la norme de l'OMM le définit : la valeur d'un pas est la moyenne pondérée
+  par le temps, c'est-à-dire l'intégrale de la courbe par la méthode des
+  trapèzes, les bornes interpolées étant marquées. Lire la courbe à des instants
+  fixes est écarté, c'est ce qui prétendrait à une information absente.
+- **Pour le validé, le critère est la tolérance, pas le pas.** Si la série
+  validée est élaguée comme l'était la Banque Hydro, à 5 % du débit, un écart de
+  trois heures entre deux points est une courbe certifiée et non un trou, et
+  l'intégrer sur quinze minutes ne crée rien. La règle « le pas agrégé doit
+  dépasser le pas de l'instrument » vaut pour le brut.
+- **Personne en aval ne tranchera l'hydrologie à notre place.** L'équipe
+  demandeuse n'a pas à arbitrer ces questions : le travail est de livrer des
+  produits définis, documentés, vérifiés et rattachés à la littérature, chacun
+  avec ce qu'il vaut, et non de résoudre parfaitement leur problème. Le format
+  est le parquet, comme le reste.
 
-### Ce que les mesures disent de cette cible
+Une grille régulière entre quinze minutes et une heure, dont la méthode est
+écrite et justifiée, est l'objectif.
 
-Le comptage est dans [SOURCE.md](SOURCE.md), section « Ce qu'une grille
-régulière trouverait sous elle ». Il tranche un point : **le pas natif ne
-soutient une grille de 15 minutes que sur le brut, et le brut ne commence qu'en
-2013** sur sept des huit stations du jeu de test. Avant 2013 il ne reste que la
-courbe validée, dont la moitié des jours ont un pas médian supérieur à une heure
-et dont le p90 dépasse l'heure dans 97 % des cas.
+### Les produits envisagés
 
-Une grille unique à 15 minutes sur toute la chronique reste réalisable, mais
-elle serait portée par la mesure après 2013 et par l'interpolation avant. C'est
-l'arbitrage central, et il appartient à l'analyste et non au logiciel.
+| produit | définition | à quoi il sert |
+|---|---|---|
+| natif | la chronique servie, déjà livrée | l'indicateur de Courret, qui prend un pas variable |
+| moyenne | intégrale trapézoïdale sur le pas, divisée par sa durée | l'entrée de `hydropeak`, l'usage courant |
+| minimum et maximum | extrêmes instantanés dans le pas, bornes comprises | garder l'amplitude que la moyenne aplatit |
 
-### Les arbitrages qui restent
+Chaque pas porterait la part de sa durée réellement couverte et le plus grand
+écart entre deux points utilisés, et resterait vide là où la chronique est
+discontinue.
 
-**Ce sera un outil paramétrable et non une grille figée**, ce qui évite
-d'enfermer un choix scientifique dans un fichier et laisse l'analyste assumer le
-sien. Cinq points demandent un arbitrage qui n'est pas technique :
+### Ce qu'il faut mesurer avant de figer quoi que ce soit
 
-1. **La loi d'interpolation, qui ne pose pas la même question selon le statut.**
-   Sur le brut, qui est un échantillonnage régulier, interpoler linéairement un
-   front d'éclusée arrondit les angles et biaise toute métrique de gradient. Sur
-   le validé, qui est une courbe à points de rupture, l'interpolation linéaire
-   est la lecture que le producteur définit, et non une approximation ajoutée.
-   La même option n'a donc pas le même sens des deux côtés.
-2. **Le statut qui sert de source à la grille.** Le brut est dense mais récent ;
-   le validé est profond mais élagué selon ce qui intéressait l'hydromètre, qui
-   n'est pas la variation infra-horaire. Prendre le meilleur des deux à chaque
-   instant produit une chronique dont la nature change en cours de route, ce que
-   la v1 a refusé de faire point par point ; n'en garder qu'un seul ampute soit
-   le passé, soit la finesse.
-3. **Le seuil au delà duquel on renonce à interpoler.** Il décide concrètement
-   si les années d'avant 2013 sortent vides ou remplies. `coverage.csv` donne
-   la distribution réelle des écarts station par station et année par année,
-   c'est à elle qu'il faut le confronter.
-4. **Les modalités d'application du seuil** : coupe franche laissant la grille
-   vide, ou marquage conservant la valeur avec un indicateur de confiance. La
-   coupe franche est celle qui respecte la contrainte de constance, puisqu'elle
-   laisse la grille intacte et se contente de ne pas la remplir.
-5. **Ce qu'on publie à côté de la valeur.** L'idiome des dépôts voisins veut
-   qu'une colonne dérivée s'accompagne d'une colonne qui dit jusqu'où la croire.
-   Ici ce serait l'écart en minutes à la mesure réelle la plus proche, qui rend
-   vérifiable ligne par ligne ce que le seuil a laissé passer.
+Sur le jeu de test d'abord, qui est fixe et suffit à voir ce qui est
+atteignable, puis sur les éclusées. Chaque résultat ira dans
+[SOURCE.md](SOURCE.md).
 
-`QmnH`, le débit moyen horaire, reste à écarter pour ce sujet : une moyenne
-lisse précisément les montées et descentes qui font l'éclusée.
+Une première est faite : **`QmnH`, le débit moyen horaire d'HydroPortail, est
+l'intégrale par la méthode des trapèzes** de la série `most_valid`, validé ou
+pré-validé compris, sur l'heure qui suit son horodatage. Le producteur agrège
+donc déjà comme nos collègues le demandent, y compris sur une courbe élaguée à
+un point toutes les trois heures, et `QmnH` devient la référence contre
+laquelle vérifier notre propre calcul au pas horaire. Il n'existe pas en brut
+et ne descend pas sous l'heure : ce n'est pas un produit.
 
-### Les deux questions à poser à l'équipe demandeuse
+1. **La tolérance d'élagage actuelle.** Comparer le brut au validé interpolé là
+   où les deux existent, en sachant que l'écart mélange la correction des
+   valeurs, 0,44 % en médiane à Tarascon, et l'élagage.
+2. **Ce que coûte l'agrégation.** Sur le brut à cinq minutes : gradient maximal
+   et nombre d'éclusées détectées selon les critères de Courret, en natif, à
+   quinze minutes et à une heure.
+3. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
+   rapport aux trous visibles, pour savoir s'il suffit à décider où la grille
+   reste vide.
 
-Elles conditionnent l'outil et ne se tranchent pas ici :
+### Ce qui reste ouvert après ces mesures
 
-1. Un seul pas pour les 51 stations, ou un pas par station constant dans le
-   temps ?
-2. Faut-il remonter avant 2013, sachant que la grille y serait portée par la
-   courbe validée et non par la mesure brute, ou l'étude se limite-t-elle à la
-   période où le pas natif soutient la cible ?
-
-Les trois autres arbitrages peuvent lui être soumis sous forme de proposition
-argumentée plutôt que de question ouverte.
+- **Le statut qui sert de source.** `most_valid` enchaîne validé, pré-validé et
+  brut par blocs ; si la mesure 2 montre que le validé tient les fronts, il peut
+  porter toute la chronique, sinon il faudra deux régimes, avant et après 2013,
+  et le dire.
+- **La période ancienne.** Les relevés d'échelle, une lecture par jour, ne sont
+  pas une courbe élaguée : il faudra une limite, par date ou par écart entre
+  points.
+- **Quinze minutes ou une heure.** Le brut récent soutient quinze minutes ; le
+  validé ancien, selon la mesure 2, peut-être aussi. Rien n'interdit de livrer
+  les deux pas.
+- **L'incertitude.** Une question à poser à Benjamin Renard : que devient
+  l'incertitude quand on intègre une courbe élaguée à une tolérance donnée.
 
 ## Les questions ouvertes
 

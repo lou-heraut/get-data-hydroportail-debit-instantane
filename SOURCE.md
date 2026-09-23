@@ -255,6 +255,57 @@ La grille ne retient que les points de rupture qui tombent sur ses bornes :
 l'interpolation. Demander la grille au serveur dégrade donc la donnée validée
 au lieu de la servir.
 
+### `QmnH` est l'intégrale de la courbe, sur l'heure qui suit l'horodatage
+
+Mesuré le 23 septembre 2026, du 1er au 7 mars 2024, en comparant le `QmnH`
+servi à des moyennes que nous calculons nous-mêmes sur la série `most_valid`
+déjà téléchargée. La documentation du service dit seulement « moyenne des
+débits instantanés », voir [REFERENCES.md](REFERENCES.md).
+
+Écart relatif au `QmnH` servi, pour quatre manières de faire une moyenne
+horaire, n = 1 :
+
+```
+                                    Tarascon V720001002      Embrun X031001001
+                                    median   p95    max      median   p95    max
+trapezes sur [t, t+1h]               0,12   0,31   0,42      0,06   0,21   0,64
+trapezes sur [t-1h, t]               0,97   4,75   6,88      0,69   7,46  17,18
+moyenne arithmetique des points      0,43   1,02   3,86      0,43   3,58   6,09
+valeur interpolee a l'instant t      0,51   2,59   4,67      0,27   4,07   8,81
+```
+
+- **`QmnH` est une moyenne pondérée par le temps, calculée par la méthode des
+  trapèzes**, c'est-à-dire la définition de l'OMM. Ni la moyenne arithmétique
+  des points ni la lecture à l'instant ne la reproduisent.
+- **L'horodatage est le début de l'intervalle** : la valeur de 00:00 est la
+  moyenne de 00:00 à 01:00. La lecture inverse, que la documentation laisse
+  ouverte, s'écarte jusqu'à 17 %.
+- **Les valeurs servies sont arrondies à trois chiffres significatifs.** Les
+  168 valeurs de Tarascon, de 1 980 000 à 3 330 000 l/s, sont toutes des
+  multiples de 10 000 ; celles d'Embrun, de 46 500 à 66 700, des multiples de
+  100. C'est un arrondi de 0,5 % au pire. L'écart restant avec notre calcul
+  tient dans 0,9 unité de ce dernier chiffre, ce que l'arrondi explique à
+  l'essentiel.
+- **Le producteur intègre lui-même la courbe élaguée.** À Embrun, `most_valid`
+  n'a sur cette semaine que 56 points pré-validés, un toutes les trois heures,
+  et `QmnH` en donne 168 moyennes horaires qui concordent à 0,06 % en médiane
+  avec leur intégrale. Il fait donc exactement ce que la lecture de la série
+  validée comme courbe certifiée autorise.
+- **`step` est le « n » du nom**, comme pour `QIXnJ` : `step=3` rend 56
+  moyennes sur trois heures au lieu de 168, et le titre le dit, « n=3, non
+  glissant ». Ce n'est pas un bouton de quota pour cette grandeur, alors
+  qu'elle appartient à la famille instantanée.
+- **`QmnH` n'existe pas en brut.** Le statut `raw` rend zéro point à Embrun sur
+  une semaine où le brut compte 672 points. Il ne descend pas non plus sous
+  l'heure. Il ne peut donc pas être un produit pour les éclusées, seulement la
+  référence qui valide notre calcul.
+
+Une première indication sur la tolérance de l'élagage, en attendant la mesure
+complète : la moyenne horaire calculée sur le **brut** s'écarte du `QmnH` de
+0,34 % en médiane et de 4,2 % au plus à Embrun, de 0,20 % et 0,84 % à Tarascon.
+Cela reste sous les 5 % de la Banque Hydro, mais sur une semaine et deux
+stations seulement.
+
 ## Les limites du service
 
 ### Le quota annoncé
