@@ -268,8 +268,8 @@ au lieu de la servir.
 
 ### `QmnH` est l'intégrale de la courbe, sur l'heure qui suit l'horodatage
 
-Mesuré le 23 septembre 2026, du 1er au 7 mars 2024, en comparant le `QmnH`
-servi à des moyennes que nous calculons nous-mêmes sur la série `most_valid`
+Mesuré le 23 septembre 2026, refait par `explore/probe_qmnh.py`, du 1er au
+7 mars 2024, en comparant le `QmnH` servi à des moyennes que nous calculons nous-mêmes sur la série `most_valid`
 déjà téléchargée. La documentation du service dit seulement « moyenne des
 débits instantanés », voir [references.md](references.md).
 
@@ -317,14 +317,16 @@ complète : la moyenne horaire calculée sur le **brut** s'écarte du `QmnH` de
 Cela reste sous les 5 % de la Banque Hydro, mais sur une semaine et deux
 stations seulement.
 
-### Le code `c` ne marque pas les trous, la carte `QIXnJ` si
+### Le code `c` ne marque pas les trous de façon fiable, la carte `QIXnJ` si
 
-Mesuré le 23 septembre 2026 sur le jeu de test. Le code de continuité vaut 0,
-« continue », sur la quasi-totalité des points, y compris après un écart de
-plusieurs jours : les 1 035 écarts de plus d'un jour de la série validée de
-l'Ain portent tous `c = 0`, et 2 640 des 2 652 de Fréjus. Il ne dit donc pas
-si un long écart entre deux points validés est un trou ou un segment que le
-producteur certifie.
+Mesuré le 23 septembre 2026 sur le jeu de test, refait par
+`explore/validated_gaps.py`. Le code de continuité du point qui suit un écart
+de plus d'un jour dans la série validée dépend du producteur : il vaut 0,
+« continue », sur les 1 035 écarts de l'Ain et sur 2 640 des 2 652 de Fréjus,
+mais 4, « discontinue faible », sur 69 des 72 de W107403001, et 6 sur un tiers
+de ceux de Tarascon. Il ne peut donc pas dire à lui seul si un long écart
+entre deux points validés est un trou ou un segment que le producteur
+certifie.
 
 La carte `QIXnJ`, que l'inventaire télécharge déjà, le dit. Pour chaque écart
 de plus de deux jours de la série validée, on regarde si les jours intérieurs
@@ -350,8 +352,8 @@ stable, que deux points suffisent à décrire.
 
 ### Agrégé, le validé garde les pics, et les gradients selon sa densité
 
-Mesuré le 23 septembre 2026 sur le jeu de test, avec
-`hydroportail/aggregate.py`. Pour chaque journée où le brut et le validé
+Mesuré le 23 septembre 2026 sur le jeu de test, refait par
+`explore/compare_valid_raw.py`. Pour chaque journée où le brut et le validé
 existent tous deux, le brut portant tous les pas de quinze minutes sans point
 marqué douteux, et la journée étant certifiée validée par la carte `QIXnJ`
 (voir ci-dessus), les deux séries sont agrégées sur les mêmes pas et
@@ -809,7 +811,7 @@ changements en cours d'année sont pris en compte d'eux-mêmes, et une valeur
 agrégée ne repose jamais sur un intervalle que le capteur a sauté.
 
 Part des pas de chaque année civile ainsi portés, mesurée le 23 septembre 2026
-sur le jeu de test, en % :
+sur le jeu de test et refaite par `explore/raw_support.py`, en % :
 
 ```
                     sortie a 15 min          sortie a 30 min          sortie a 60 min
@@ -992,6 +994,11 @@ les valeurs sont opaques (`POH900`, `BSH060`, `RIC300`). La Durance à Embrun
 joue ce rôle en attendant.
 
 ## Refaire ces mesures
+
+Les mesures du rééchantillonnage, du 23 septembre 2026, se refont par les
+scripts d'`explore/`, que chaque section cite ; leur liste est dans
+[CLAUDE.md](../CLAUDE.md). Tous lisent les données du jeu de test déjà
+téléchargées, et un seul, `probe_qmnh.py`, interroge le service.
 
 Aucune de ces valeurs ne doit être reprise sur parole si le service a changé.
 La façon de les revérifier, avec le client d'exploration minimal :

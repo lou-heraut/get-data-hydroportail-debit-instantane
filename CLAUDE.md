@@ -168,32 +168,67 @@ attendre qu'on le demande :
 **v2.0.0 livrée le 22 septembre 2026**, taguée et poussée. L'outil télécharge,
 inventorie, écrit son datapackage et se contrôle lui-même, et ce qu'il produit
 est découpé en cas. Ce que chaque version apporte est dans
-[CHANGELOG.md](CHANGELOG.md). La v2.0.0 n'ajoute aucune fonction : elle applique
-la règle de langue, et tout chemin ou commande écrit avant elle est à reprendre.
+[CHANGELOG.md](CHANGELOG.md), ce qui a été fait depuis sous « Non publié ».
 
 Deux cas existent. `2026-09_test-set`, les dix stations qui couvrent les cas
 limites, est téléchargé en entier et ses cinq contrôles passent : c'est sur lui
-que tourne la procédure de vérification ci-dessous. `2026-09_eclusees-rmc`, la
+que tourne la procédure de vérification ci-dessous, et sur lui qu'ont été
+faites toutes les mesures du rééchantillonnage. `2026-09_eclusees-rmc`, la
 demande en cours, a sa liste traduite, ses arbitrages posés et ses 47 stations
-inventoriées ; **son téléchargement a été lancé le 23 septembre**, environ
-280 Mo et deux heures et demie. S'il a été interrompu, la même commande le
-reprend : ce qui est en cache n'est pas redemandé.
+inventoriées ; **son téléchargement a été lancé le 23 septembre** et tournait
+encore à la fin de la session. S'il n'est pas allé au bout, la même commande le
+reprend sans rien redemander, voir [ROADMAP.md](ROADMAP.md).
 
-Ce n'est donc pas un chantier de fond : les modifications sont a priori des
-corrections ciblées, et la liste de ce qui est arrêté et ne se rediscute pas est
-en fin de [ROADMAP.md](ROADMAP.md).
+**Le chantier en cours est le rééchantillonnage**, ce que la demande d'origine
+réclamait vraiment : une chronique à pas régulier, quinze minutes visées, une
+heure au plus. La session du 23 septembre en a tranché la méthode, avec celui
+qui porte la demande, et elle est dans [docs/design.md](docs/design.md),
+section « Le rééchantillonnage : ce qui est tranché ». En une phrase : **on
+agrège par l'intégrale, sans jamais échantillonner ; les valeurs viennent du
+validé ; le brut dit le pas de l'instrument et ce que le validé a perdu.** Le
+calcul existe, `hydroportail/aggregate.py`, testé et vérifié contre le `QmnH`
+d'HydroPortail, mais il n'est branché sur aucune commande.
 
-Le rééchantillonnage a commencé : `hydroportail/aggregate.py` agrège une
-série sur des pas réguliers, testé et vérifié contre le `QmnH` d'HydroPortail,
-mais n'est branché sur aucune commande. Reste ouvert, et **pas à trancher
-seul**, le reste de l'outil de rééchantillonnage, qui est
-ce que la demande d'origine réclamait vraiment : la v1 livre la donnée native, à
-son pas natif, pas la chronique à pas régulier que l'étude des éclusées réclame.
-Le cadre a été posé le 23 septembre à partir de la littérature : on agrège par
-l'intégrale sur le pas, on n'échantillonne pas, et quatre mesures restent à faire
-avant de figer la méthode. Le détail est dans [ROADMAP.md](ROADMAP.md), les
-références dans [docs/references.md](docs/references.md). L'équipe demandeuse
-n'a pas à trancher ces questions d'hydrologie, elles se tranchent ici.
+### Pour reprendre
+
+Lire, dans cet ordre, la section du rééchantillonnage de
+[docs/design.md](docs/design.md), puis celle de [ROADMAP.md](ROADMAP.md), qui
+dit ce qui reste dans l'ordre où le faire : la table de support, le choix du
+pas, le produit, la notice. Les constats qui fondent la méthode sont dans
+[docs/findings.md](docs/findings.md), de « `QmnH` est l'intégrale de la
+courbe » à « Agrégé, le validé garde les pics », et de « Le pas du brut change »
+à « Ce que chaque pas de sortie garde du brut » ; la littérature dans
+[docs/references.md](docs/references.md).
+
+**Ne pas rouvrir sans fait nouveau** ce que `design.md` tranche : agréger et non
+échantillonner, les valeurs du validé et jamais du brut là où le validé existe,
+la carte `QIXnJ` pour les trous du validé. Chacun de ces choix a été discuté,
+mesuré et confronté à la littérature. Ce qui reste ouvert l'est explicitement
+dans la roadmap, et la plupart de ces questions sont scientifiques avant d'être
+techniques : les poser, avec les options et une recommandation, plutôt que de
+les trancher seul.
+
+**Les équipes qui reçoivent les données ne sont pas hydrologues.** Elles
+n'arbitrent pas la méthode ; on leur livre des produits définis, documentés et
+vérifiés, avec de quoi justifier les choix, et le format est le parquet.
+
+### Les scripts d'exploration
+
+`explore/` est hors de l'outil. Ses dépendances sont une option du paquet,
+`pip install -e ".[explore]"`, et tout s'y lance depuis la racine du dépôt,
+sur le cas nommé par `CASE` dans `explore/common.py`. Chaque script refait une
+mesure de `docs/findings.md`, qui le cite :
+
+| script | ce qu'il fait | requêtes |
+|---|---|---|
+| `raw_support.py` | part des pas de chaque année portés par le brut, à 15, 30 et 60 min | aucune |
+| `compare_valid_raw.py` | ce que le validé garde du brut, agrégés sur les mêmes pas | aucune |
+| `validated_gaps.py` | trous et segments certifiés du validé, code `c` contre carte `QIXnJ` | aucune |
+| `probe_qmnh.py` | `QmnH` d'HydroPortail contre notre agrégation au pas horaire | une |
+| `plot_days.py` | quelques journées à 15 et 60 min, en PNG et PDF | aucune |
+| `plot_year.py` | une station et une année à parcourir dans le navigateur | aucune |
+
+Les figures s'écrivent dans `data/_exploration/`, ignoré par git.
 
 ## Contexte
 
@@ -314,9 +349,8 @@ sous-dossier par cas y porte les tables, et `data/.cache/` le
 cache des réponses reçues, commun à tous les cas et supprimable au prix d'un
 retéléchargement.
 
-Les figures d'`explore/` demandent matplotlib et plotly, qui ne sont pas des
-dépendances de l'outil : `pip install -e ".[explore]"`. Elles s'écrivent dans
-`data/_exploration/`, ignoré lui aussi, et se refont à la demande.
+Les scripts d'`explore/` ont leur propre option de dépendances, voir « Les
+scripts d'exploration » plus haut.
 
 ## Pièges à ne pas « corriger »
 
@@ -363,6 +397,19 @@ chiffres sont dans [docs/findings.md](docs/findings.md).
 - **Une sonde ponctuelle ne peut pas établir qu'une station n'a pas de débit.**
   Utiliser la carte de couverture `QIXnJ`. L'erreur a déjà été commise une fois
   sur W107403001.
+- **Le code `c` ne dit pas de façon fiable si un écart est un trou.** Certains
+  producteurs le marquent, d'autres jamais. Pour les trous du validé, lire la
+  carte `QIXnJ` : un long écart y est entièrement présent, segment certifié, ou
+  entièrement absent, trou.
+- **Un long écart dans la série validée n'est pas un manque.** C'est un segment
+  que le producteur certifie à sa tolérance d'élagage près. Le critère d'écart
+  entre points, juste pour le brut, ne décide pas seul sur le validé.
+- **Le pas du brut n'est pas cinq minutes partout.** Il se resserre par paliers,
+  de soixante à cinq minutes entre 2013 et 2022 sur certaines stations, et reste
+  à quinze sur d'autres. Le lire dans `coverage.csv`, ne jamais le supposer.
+- **Le brut n'est jamais une source de valeurs là où le validé existe.** Il est
+  provisoire, et certains de ses artefacts ne sont pas marqués douteux : un
+  point isolé à 298 m³/s entre deux valeurs à 16,3 devient une fausse éclusée.
 - **Dédoublonner sur la ligne entière**, pas sur `(code_station, date_obs,
   statut)` : deux niveaux portent toujours deux `statut` différents, mais pas
   toujours deux `qualification` différentes.

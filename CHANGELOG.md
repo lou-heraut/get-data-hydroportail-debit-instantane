@@ -5,6 +5,27 @@ Format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage
 correction, le deuxième pour un ajout qui ne casse rien, le premier quand le
 format des données livrées change.
 
+## [Non publié]
+
+Ce qui a été fait depuis la v2.0.0, sans changer le format des données livrées.
+
+La documentation de fond passe dans `docs/` : `SOURCE.md` devient
+`docs/findings.md`, ce que nous avons constaté, `DESIGN.md` devient
+`docs/design.md`, et un nouveau fichier, `docs/references.md`, rassemble ce que
+la littérature dit des questions du dépôt, séparé de ce que nous avons mesuré.
+
+La méthode du rééchantillonnage est tranchée et écrite dans `docs/design.md` :
+on agrège par l'intégrale sur le pas, comme l'OMM et comme le `QmnH`
+d'HydroPortail, sans jamais échantillonner ; chaque pas porte sa moyenne, son
+minimum et son maximum ; les valeurs viennent du validé, et le brut dit le pas
+de l'instrument et ce que le validé a perdu. Le calcul est
+`hydroportail/aggregate.py`, testé, qui n'est encore branché sur aucune
+commande.
+
+Le dossier `explore/` porte les scripts qui refont chaque mesure de cette
+méthode et les figures qui ont servi à la comprendre, avec leurs dépendances
+en option, `pip install -e ".[explore]"`.
+
 ## [2.0.0] - 2026-09-22
 
 Une règle de langue, et tout ce qui ne la respectait pas.

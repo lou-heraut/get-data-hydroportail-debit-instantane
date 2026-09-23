@@ -11,9 +11,16 @@ three significant digits. See docs/references.md and docs/findings.md.
 Next to the mean, each bin carries its minimum and maximum, bounds included,
 because a mean flattens the fronts that make a hydropeak while the maximum
 keeps its peak; and the largest gap between neighbouring points that overlaps
-it, which decides whether the measurement supports the bin at all. A bin is
-supported when that gap does not exceed its length: aggregating finer than
-what the sensor recorded would be inventing data.
+it. ``mesure_suffisante`` is true when that gap does not exceed the bin.
+
+**What that flag means depends on the status of the series.** On a raw
+series, a gap is time the sensor did not record, and a bin wider than the gap
+is the only honest one: aggregating finer would be inventing data. On a
+validated series it is not: a long gap between two breakpoints is a stretch
+of curve the producer certifies within its pruning tolerance, and whether it
+is certified or a hole is read from the QIXnJ coverage map, not from the gap.
+The flag is computed on both, and used to fill bins only on raw data. See the
+decision on the roles of raw and validated data in docs/design.md.
 """
 
 from __future__ import annotations

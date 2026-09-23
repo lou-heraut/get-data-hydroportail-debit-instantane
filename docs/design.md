@@ -588,6 +588,105 @@ initial proposait `--statuses brut | most_valid | les-deux`, ce qui traduisait
 `raw` et pas `most_valid` sur la même ligne. C'est `--statuses raw` qui est
 retenu, par simple application de la règle ci-dessus.
 
+## Le rééchantillonnage : ce qui est tranché
+
+Tranché le 23 septembre 2026, avec l'accord de celui qui porte la demande.
+Les faits sont dans [findings.md](findings.md), la littérature dans
+[references.md](references.md), et ce qui reste ouvert, dont le pas de sortie
+et la période ancienne, dans [ROADMAP.md](../ROADMAP.md). L'équipe demandeuse
+n'a pas le bagage pour trancher ces questions d'hydrologie : elles se tranchent
+ici, et se justifient auprès d'elle par une table de ce que chaque pas garde.
+
+### On agrège, on n'échantillonne jamais
+
+La valeur d'un pas est la moyenne pondérée par le temps, l'intégrale de la
+courbe par la méthode des trapèzes divisée par la durée du pas, les deux bornes
+étant interpolées entre leurs points voisins. C'est la définition de l'OMM,
+c'est ce que réclament les hydrologues de l'unité, et c'est exactement ce que
+HydroPortail sert comme `QmnH`, ce qui a permis de vérifier notre calcul contre
+le sien.
+
+Lire la courbe à des instants fixes est écarté : c'est prétendre à une
+information que la mesure n'a pas, et c'est ce qu'a fait la grille `Qln` du
+serveur, qui perd 78 % des points de rupture. Agréger n'est pas pour autant le
+contraire d'interpoler : l'intégrale par les trapèzes est celle de
+l'interpolation linéaire entre les points. Ce qui distingue les deux est ce
+qu'on en retient, une moyenne sur une durée ou une valeur à un instant.
+
+### La moyenne, et le minimum et le maximum du pas
+
+Une moyenne est un filtre passe-bas : elle garde le volume et aplatit ce qui
+est plus court que le pas, en premier lieu les fronts qui font une éclusée. Le
+minimum et le maximum instantanés de chaque pas, bornes interpolées comprises,
+gardent l'amplitude que la moyenne perd. C'est le trio que l'OMM appelle valeurs
+journalières, appliqué à n'importe quel pas. Le calcul est
+`hydroportail/aggregate.py`.
+
+### Le brut dit ce qu'on peut se permettre, le validé dit combien
+
+**Les valeurs viennent de `most_valid`**, la chronique que le producteur
+arbitre, **jamais du brut là où le validé existe.** Trois raisons :
+
+- l'OMM tient le temps réel pour provisoire et non contrôlé, la série revue
+  pour définitive ;
+- le brut porte des artefacts, dont certains ne sont pas marqués douteux, et
+  un artefact agrégé devient une éclusée qui n'a pas eu lieu ;
+- l'indicateur de Courret, la référence française, a calé ses seuils de
+  gradient sur la série validée élaguée : les appliquer à des gradients tirés
+  du brut, bruit compris, serait mesurer avec une autre règle.
+
+**Le brut n'en est pas écarté : il apporte ce que le validé n'a pas.**
+
+- **Le pas de l'instrument**, qui borne par en dessous le pas de sortie
+  honnête, y compris sur la partie validée. Là où le capteur stockait une
+  valeur par heure, comme sur l'Ain de 2013 à 2016, une courbe validée ne
+  s'agrège pas honnêtement à quinze minutes, même si elle en a l'air.
+- **La mesure de ce que le validé a perdu**, station par station et année par
+  année. Là où le validé est dense, presque rien ; là où il est clairsemé, on
+  sait de combien il atténue les fronts, et la densité du validé devient
+  l'indicateur qui le dit sans le brut.
+
+Mélanger les deux pas par pas, le meilleur de chacun à chaque instant, est
+écarté : la chronique changerait de nature sans cesse, ce que la v1 a déjà
+refusé point par point, et aucune référence ne le fait.
+
+### Quand un pas est rempli
+
+Selon le statut de ce qui le porte :
+
+- **sur la partie validée**, le pas est rempli si son jour est certifié par la
+  carte `QIXnJ` du producteur, qui distingue sans ambiguïté un segment certifié
+  d'un trou, ce que ni l'écart entre points ni le code `c` ne font ;
+- **sur la queue brute de `most_valid`**, pas encore validée, le pas est rempli
+  si aucun écart entre points voisins ne dépasse sa durée ;
+- **dans les deux cas**, le pas de sortie ne descend pas sous le pas de
+  l'instrument, là où le brut permet de le connaître.
+
+Sur une série validée, un long écart entre deux points n'est pas un manque :
+c'est un segment que le producteur certifie à sa tolérance d'élagage près, 5 %
+à la Banque Hydro, ce que nos mesures confirment pour l'essentiel. C'est
+pourquoi le critère d'écart, juste pour le brut, ne décide pas seul sur le
+validé ; `aggregate.py` le calcule sur les deux mais ne l'emploie à remplir un
+pas que sur le brut.
+
+### Ce que chaque pas dit de lui-même
+
+Au moins le statut dont il vient, pour que la queue provisoire se voie ; la
+densité du validé, qui dit jusqu'où croire ses fronts ; et le plus grand écart
+entre points voisins. La liste exacte et les noms se fixeront avec le format du
+produit, et se relisent d'un regard extérieur : les premiers noms se sont
+avérés ambigus.
+
+### Ce qu'on accepte, et que la notice dira
+
+- des gradients atténués d'environ un tiers les jours où le validé compte dix
+  points ou moins ;
+- une queue récente provisoire, de nature différente du reste ;
+- des écarts de valeur au-delà de 5 % entre validé et brut sur une minorité de
+  pas, sans pouvoir séparer l'élagage de la correction ;
+- avant 2013, faute de brut, aucune connaissance du pas de l'instrument : seules
+  restent la densité du validé et la carte `QIXnJ`.
+
 ## La mise à jour incrémentale, écartée en v1
 
 Pas seulement pour aller vite. Un débit n'est pas une observation figée : il est
