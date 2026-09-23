@@ -134,17 +134,18 @@ et ne descend pas sous l'heure : ce n'est pas un produit.
 2. **Les points douteux du brut.** Combien sont marqués `q = 12`, combien sont
    des artefacts isolés comme celui de W283201001, et ce que la validation en
    fait. C'est ce qui décidera s'il faut les écarter avant d'agréger.
-3. **Le validé tient-il les fronts ?** C'est la question qui peut tout
-   simplifier. La série validée est corrigée et débarrassée des artefacts ; si
-   son élagage garde les fronts d'éclusée, elle peut porter l'agrégation fine
-   partout où elle existe, sans les pièges du brut. Sur les périodes où les
-   deux existent : gradient maximal, pic et nombre d'éclusées, du brut et du
-   validé, et l'écart entre leurs moyennes, qui dira aussi la tolérance de
-   l'élagage actuel. La densité du validé varie beaucoup : en 2024, 62 000
-   points pour 105 000 bruts à Moûtiers, mais 7 000 à Pont-d'Ain.
+3. **Le validé tient-il les fronts ?** Une première réponse est mesurée, voir
+   [docs/findings.md](docs/findings.md) : agrégé à quinze minutes, le validé
+   garde les pics partout, et les gradients à 96 % ou plus quand il compte plus
+   de cinquante points par jour, à la moitié sous dix. Deux choses restent à
+   faire pour conclure : séparer ses trous de ses longs segments, par le code
+   `c`, pour ne pas écarter à tort les journées calmes ; et départager, dans les
+   gradients que le brut a de plus, le signal perdu du bruit retiré. Si le
+   validé suffit là où il est dense, il porte l'agrégation fine sans les
+   artefacts du brut, dont certains ne sont même pas marqués douteux.
 4. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
    rapport aux trous visibles, pour savoir s'il suffit à décider où la grille
-   reste vide.
+   reste vide. La mesure 3 en dépend aussi.
 
 ### Ce qui reste ouvert après ces mesures
 

@@ -317,6 +317,50 @@ complète : la moyenne horaire calculée sur le **brut** s'écarte du `QmnH` de
 Cela reste sous les 5 % de la Banque Hydro, mais sur une semaine et deux
 stations seulement.
 
+### Agrégé, le validé garde les pics, et les gradients selon sa densité
+
+Mesuré le 23 septembre 2026 sur le jeu de test, avec
+`hydroportail/aggregate.py`. Pour chaque journée où le brut et le validé
+existent tous deux, le brut portant tous les pas de quinze minutes et aucun de
+ses points n'étant marqué douteux, les deux séries sont agrégées sur les mêmes
+pas et comparées : le pic de la moyenne, et le plus grand saut entre deux
+moyennes consécutives, qui tient lieu de gradient. Sont retenues les 9 450
+journées sur 15 020 où le validé n'a pas d'écart de plus de six heures ; la
+limite de ce filtre est dite plus bas.
+
+Rapport validé sur brut, journées à forte variation, où l'amplitude des
+moyennes dépasse 30 % du pic, rangées par nombre de points validés dans la
+journée :
+
+```
+points valides    jours   pic median   gradient median   gradient p10   gradient < 0,5
+par jour
+ 1 a 10             120        0,99             0,54            0,27            41 %
+11 a 25           1 422        1,00             0,77            0,47            14 %
+26 a 50           1 159        1,00             0,90            0,64             4 %
+51 a 100          1 365        1,00             0,96            0,80           0,3 %
+plus de 100       1 725        1,00             1,00            0,92           0,6 %
+```
+
+- **Le pic est gardé partout**, à 99 ou 100 % en médiane, quelle que soit la
+  densité : l'élagage garde les sommets, ce que prévoit une tolérance relative
+  au débit.
+- **Le gradient dépend de la densité du validé.** Au-delà de cinquante points
+  par jour, il est gardé à 96 % ou plus ; en dessous de dix, à la moitié. Par
+  station, de 100 % à Moûtiers, 125 points validés par jour, à 86 % à Tarascon,
+  27 par jour.
+- **Ce rapport ne se lit pas tout à fait comme une perte.** Le brut n'est pas
+  corrigé : une part de ses gradients est du bruit ou un artefact que la
+  validation retire à raison. Les journées au rapport le plus faible le
+  montrent : 6 140 m³/s en brut à Tarascon le 5 août 2021, contre 1 817 en
+  validé ; 424 m³/s en brut sur l'Ain le 24 décembre 2017, contre 113. **Ces
+  artefacts-là ne sont pas marqués douteux.**
+- **La limite du filtre.** Écarter les journées où le validé a un écart de plus
+  de six heures retire les trous, mais aussi les longs segments qu'un débit
+  stable justifie, et favorise donc les journées denses : l'Ain passe de 3 029
+  journées à 440. Séparer un trou d'un segment demande le code de continuité
+  `c`, qui reste à lire.
+
 ## Les limites du service
 
 ### Le quota annoncé
