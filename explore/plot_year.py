@@ -42,7 +42,7 @@ def level(frame, statut, start, end):
 def steps(series, minutes):
     """Bins as a step line, with the bins the measurement does not support blank."""
     bins = aggregate(series.date_obs, series.debit_m3s, minutes)
-    blank = ~bins.pas_porte
+    blank = ~bins.mesure_suffisante
     for col in ("debit_moyen_m3s", "debit_min_m3s", "debit_max_m3s"):
         bins.loc[blank, col] = np.nan
     return bins

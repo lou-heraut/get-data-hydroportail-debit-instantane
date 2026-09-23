@@ -23,7 +23,7 @@ def test_a_constant_series_averages_to_itself():
     t, v = _series(np.arange(0, 121, 5), np.full(25, 12.5))
     out = aggregate(t, v, 15)
     assert np.allclose(out.debit_moyen_m3s, 12.5)
-    assert out.pas_porte.all()
+    assert out.mesure_suffisante.all()
 
 
 def test_a_ramp_averages_to_its_midpoint():
@@ -66,16 +66,16 @@ def test_a_bin_is_supported_only_if_no_gap_exceeds_it():
     out = aggregate(t, v, 15).set_index("debut_pas")
     start = pd.Timestamp("2024-03-01", tz="UTC")
     hole = [start + pd.Timedelta(minutes=m) for m in (60, 75, 90, 105)]
-    assert not out.loc[hole, "pas_porte"].any()
-    assert out.loc[hole, "ecart_max_min"].eq(50).all()
-    assert out.drop(index=hole).pas_porte.all()
+    assert not out.loc[hole, "mesure_suffisante"].any()
+    assert out.loc[hole, "plus_grand_ecart_min"].eq(50).all()
+    assert out.drop(index=hole).mesure_suffisante.all()
 
 
 def test_a_gap_equal_to_the_bin_is_supported():
     # Raw data at 15 minutes supports a 15 minute bin, not a 10 minute one.
     t, v = _series(np.arange(0, 121, 15), np.ones(9))
-    assert aggregate(t, v, 15).pas_porte.all()
-    assert not aggregate(t, v, 10).pas_porte.all()
+    assert aggregate(t, v, 15).mesure_suffisante.all()
+    assert not aggregate(t, v, 10).mesure_suffisante.all()
 
 
 def test_bins_are_aligned_on_round_times():

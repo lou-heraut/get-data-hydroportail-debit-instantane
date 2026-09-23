@@ -67,7 +67,7 @@ def aggregate(times: pd.Series, values, minutes: int) -> pd.DataFrame:
     if len(t) < 2:
         return pd.DataFrame(columns=["debut_pas", "debit_moyen_m3s",
                                      "debit_min_m3s", "debit_max_m3s",
-                                     "ecart_max_min", "pas_porte"])
+                                     "plus_grand_ecart_min", "mesure_suffisante"])
     width = float(minutes)
     edges = np.arange(np.ceil(t[0] / width) * width, t[-1] + width / 2, width)
     edges = edges[edges <= t[-1]]
@@ -97,6 +97,6 @@ def aggregate(times: pd.Series, values, minutes: int) -> pd.DataFrame:
         "debit_moyen_m3s": mean,
         "debit_min_m3s": low,
         "debit_max_m3s": high,
-        "ecart_max_min": gap,
-        "pas_porte": gap <= width,
+        "plus_grand_ecart_min": gap,
+        "mesure_suffisante": gap <= width,
     })

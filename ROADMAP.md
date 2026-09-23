@@ -84,9 +84,13 @@ discontinue.
 
 - **`hydroportail/aggregate.py`**, l'agrégation d'une série sur des pas
   réguliers : moyenne par intégrale, minimum et maximum bornes comprises, plus
-  grand écart entre points voisins et drapeau `pas_porte`. Testé, et vérifié
+  grand écart entre points voisins et drapeau `mesure_suffisante`. Testé, et
+  vérifié
   contre le `QmnH` d'HydroPortail, qu'il reproduit à l'arrondi près. Il n'est
-  encore branché sur aucune commande.
+  encore branché sur aucune commande. Ses deux dernières colonnes ont été
+  renommées parce qu'on les lisait mal : `plus_grand_ecart_min`, le plus grand
+  écart en minutes entre deux points voisins qui touche le pas, et
+  `mesure_suffisante`, vrai quand cet écart ne dépasse pas la durée du pas.
 - **`explore/`**, deux scripts de figures, hors de l'outil, installés par
   `pip install -e ".[explore]"` et écrivant dans `data/_exploration/` :
   `plot_days.py`, quelques journées à 15 et 60 minutes en PNG et PDF, et
@@ -259,6 +263,21 @@ Les afficher au moins sur les lignes signalées éviterait de refaire l'enquête
 la main. Les ajouter à `stations.csv` serait plus utile encore, mais c'est un
 changement du format livré, donc une décision de version : ce sont des textes
 libres et longs, dont il faudrait choisir la place et la troncature.
+
+### Un dictionnaire du produit agrégé
+
+Chaque colonne du produit agrégé demandera une définition d'une phrase, lisible
+par qui n'a pas suivi sa construction, comme `schema.py` en donne déjà pour la
+table native dans le `datapackage.json`. Les premiers noms se sont avérés
+ambigus à la lecture ; les définitions se relisent avec un regard extérieur
+avant la livraison.
+
+### Changer de pas dans les pages d'exploration
+
+Les pages de `explore/plot_year.py` sont faites pour un pas à la fois. Un
+sélecteur entre 15, 30 et 60 minutes sur la même page permettrait de voir
+directement ce que chaque pas garde. Utile si ces pages deviennent un outil de
+décision, sinon superflu.
 
 ## Ce qui est tranché, et qu'on ne rouvre pas
 
