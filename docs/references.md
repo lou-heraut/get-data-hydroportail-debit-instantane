@@ -48,6 +48,16 @@ Ce qu'on en tire :
 Le manuel demande aussi que tous les horodatages soient convertis en UTC
 (§ 6.4), ce que fait HydroPortail.
 
+Sur le statut des données, l'introduction est nette :
+
+> Real-time data are used for several purposes and users should be made aware
+> that real-time data are always considered preliminary and have not been
+> quality controlled. [...] The data are then prepared for publication and are
+> considered final.
+
+Le brut d'HydroPortail est ce temps réel, provisoire ; la série validée est
+celle que le producteur a revue et publie comme définitive.
+
 ## Ce que veut dire un point de la série validée
 
 **Courret D., Baran P., Larinier M. (2021).** An indicator to characterize
@@ -92,6 +102,12 @@ amplitudes et des gradients. Deux points comptent ici :
   native est la meilleure entrée ;
 - elle signale que les débits moyens journaliers sous-estiment les vitesses de
   variation, et ne les a utilisés que faute d'autre chose.
+- **ses seuils sont calés sur la série validée élaguée, pas sur du brut.** Les
+  97 stations naturelles qui fixent le « gradient naturel maximal », au-delà
+  duquel une variation est une éclusée, et les 80 stations à éclusées qui ont
+  servi à construire l'indicateur, sont toutes en QTVAR 5 %. Appliquer ces
+  seuils à des gradients tirés du brut, bruit et artefacts compris, reviendrait
+  à mesurer avec une autre règle que celle de l'étalonnage.
 
 Le calcul est automatisé dans une macro Excel fournie en matériel
 supplémentaire. La thèse qui la précède : Courret D. (2014), *Problématique des

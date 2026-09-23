@@ -66,7 +66,10 @@ chaque pas de sortie garde du brut ». Il en découle trois choses à construire
    porté, avec le minimum et le maximum, et un pas vide sinon.
 
 La série validée, qui seule existe avant 2013, relève d'une autre logique,
-celle de la tolérance, et reste à traiter.
+celle de la tolérance. Si la voie du validé est retenue, voir le point d'étape
+plus bas, ce critère ne vaut plus que pour la queue brute de `most_valid`, et la
+table de support porte, pour la partie validée, les jours certifiés par
+`QIXnJ` et la densité du validé.
 
 ### Les produits envisagés
 
@@ -138,30 +141,56 @@ et ne descend pas sous l'heure : ce n'est pas un produit.
 2. **Les points douteux du brut.** Combien sont marqués `q = 12`, combien sont
    des artefacts isolés comme celui de W283201001, et ce que la validation en
    fait. C'est ce qui décidera s'il faut les écarter avant d'agréger.
-3. **Le validé tient-il les fronts ?** Une première réponse est mesurée, voir
-   [docs/findings.md](docs/findings.md) : agrégé à quinze minutes, le validé
-   garde les pics partout, et les gradients à 96 % ou plus quand il compte plus
-   de cinquante points par jour, à la moitié sous dix. Deux choses restent à
-   faire pour conclure : séparer ses trous de ses longs segments, par le code
-   `c`, pour ne pas écarter à tort les journées calmes ; et départager, dans les
-   gradients que le brut a de plus, le signal perdu du bruit retiré. Si le
-   validé suffit là où il est dense, il porte l'agrégation fine sans les
-   artefacts du brut, dont certains ne sont même pas marqués douteux.
-4. **Ce que dit le code de continuité `c`.** Sa fréquence et sa position par
-   rapport aux trous visibles, pour savoir s'il suffit à décider où la grille
-   reste vide. La mesure 3 en dépend aussi.
+3. **Le validé tient-il les fronts ?** Mesuré, voir
+   [docs/findings.md](docs/findings.md) : agrégé à quinze minutes, il garde les
+   pics partout, et les gradients à 94 % ou plus au-delà de vingt-cinq points
+   par jour, aux deux tiers à dix ou moins. Reste à départager, dans les
+   gradients que le brut a de plus, le signal perdu du bruit retiré.
+4. **Le code `c` et les trous.** Mesuré : `c` ne marque pas les trous, la carte
+   `QIXnJ` si, sans ambiguïté. Un long écart du validé est un segment certifié
+   si ses jours y figurent, un trou sinon.
+
+### Le choix de la source : où en est le raisonnement, le 23 septembre
+
+Point d'étape, pour ne pas mélanger brut et validé au gré des besoins. Trois
+voies, confrontées à la littérature de
+[docs/references.md](docs/references.md) et à nos constats :
+
+| voie | pour | contre, et risque |
+|---|---|---|
+| **A. le validé** (`most_valid`) | la chronique que le producteur publie comme définitive ; artefacts retirés ; profonde ; c'est sur elle que Courret a calé ses seuils | élaguée : les gradients s'atténuent là où elle est clairsemée ; sa queue récente est du brut provisoire |
+| B. le brut | dense, pas élagué | provisoire au sens de l'OMM ; artefacts, dont certains non marqués, qui deviennent de fausses éclusées ; commence en 2013, à 60 minutes par endroits ; ses gradients bruités ne se comparent pas aux seuils de Courret |
+| C. le meilleur des deux, pas par pas | le plus d'information apparente | une chronique dont la nature change sans cesse ; aucune référence ne le fait, et la v1 l'a déjà refusé point par point |
+
+**La voie A est celle vers laquelle tout converge**, et c'est la proposition à
+trancher :
+
+- **la source est `most_valid`**, telle que le producteur l'arbitre, avec pour
+  chaque pas le statut dont il vient, pour que la queue provisoire se voie ;
+- **le brut n'est pas une source mais un témoin** : il sert à mesurer ce que le
+  validé garde, jamais à le compléter ;
+- **ce qui dit si un pas est rempli dépend du statut.** Sur la partie validée,
+  la carte `QIXnJ` : un jour certifié se remplit, un trou reste vide. Sur la
+  queue brute, l'écart entre points voisins, comme mesuré sur le brut ;
+- **ce qui dit jusqu'où croire les fronts est la densité du validé**, points
+  par jour, que la mesure 3 relie au gradient gardé.
+
+Les risques qu'on accepte ainsi, et qu'il faut écrire dans la notice : des
+gradients sous-estimés d'un tiers environ les jours où le validé compte moins
+de dix points, et une queue récente de nature différente, provisoire. Ce qui
+reste à trancher avec cette voie : la période ancienne, les relevés d'échelle
+qui ne sont pas une courbe élaguée, et le pas de sortie, que la densité du
+validé et la table de support aideront à choisir.
 
 ### Ce qui reste ouvert après ces mesures
 
-- **Le statut qui sert de source.** `most_valid` enchaîne validé, pré-validé et
-  brut par blocs, et sa partie la plus récente est du brut, artefacts compris.
-  La mesure 3 dira si le validé peut porter toute la chronique, sinon il faudra
-  deux régimes, avant et après 2013, et le dire.
+- **Le statut qui sert de source.** Voir le point d'étape ci-dessus : la voie
+  du validé est proposée, elle reste à trancher.
 - **La période ancienne.** Les relevés d'échelle, une lecture par jour, ne sont
   pas une courbe élaguée : il faudra une limite, par date ou par écart entre
   points.
 - **Quinze minutes ou une heure.** Le brut récent soutient quinze minutes ; le
-  validé ancien, selon la mesure 3, peut-être aussi. Rien n'interdit de livrer
+  validé, là où il est dense, aussi. Rien n'interdit de livrer
   les deux pas.
 - **Des figures dans le processus.** Celles d'`explore/` ont servi à comprendre ;
   une version par station, la couverture et quelques journées en PDF, la

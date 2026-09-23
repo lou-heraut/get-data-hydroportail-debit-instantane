@@ -317,49 +317,75 @@ complète : la moyenne horaire calculée sur le **brut** s'écarte du `QmnH` de
 Cela reste sous les 5 % de la Banque Hydro, mais sur une semaine et deux
 stations seulement.
 
+### Le code `c` ne marque pas les trous, la carte `QIXnJ` si
+
+Mesuré le 23 septembre 2026 sur le jeu de test. Le code de continuité vaut 0,
+« continue », sur la quasi-totalité des points, y compris après un écart de
+plusieurs jours : les 1 035 écarts de plus d'un jour de la série validée de
+l'Ain portent tous `c = 0`, et 2 640 des 2 652 de Fréjus. Il ne dit donc pas
+si un long écart entre deux points validés est un trou ou un segment que le
+producteur certifie.
+
+La carte `QIXnJ`, que l'inventaire télécharge déjà, le dit. Pour chaque écart
+de plus de deux jours de la série validée, on regarde si les jours intérieurs
+y figurent :
+
+```
+               ecarts > 2 j   tous les jours presents   aucun present   en partie
+V271201001            237             237                    0              0
+V720001002             46              14                   32              0
+Y532501001          1 657           1 651                    6              0
+W011001001             49              48                    1              0
+W107403001             52               0                   52              0
+```
+
+**Jamais de cas intermédiaire** : un écart est entièrement couvert ou
+entièrement absent. Dans les écarts couverts, la carte porte le statut 16 sur
+chaque jour et `most_valid` n'a aucun point : ce n'est pas du brut qui comble un
+trou du validé, c'est le producteur qui calcule un maximum journalier sur la
+courbe validée tout au long du segment, donc qui la certifie. Un écart absent
+de la carte est un trou. À Fréjus, rivière méditerranéenne souvent à sec, 895
+de ces longs segments ont leurs deux extrémités égales : un débit nul ou
+stable, que deux points suffisent à décrire.
+
 ### Agrégé, le validé garde les pics, et les gradients selon sa densité
 
 Mesuré le 23 septembre 2026 sur le jeu de test, avec
 `hydroportail/aggregate.py`. Pour chaque journée où le brut et le validé
-existent tous deux, le brut portant tous les pas de quinze minutes et aucun de
-ses points n'étant marqué douteux, les deux séries sont agrégées sur les mêmes
-pas et comparées : le pic de la moyenne, et le plus grand saut entre deux
-moyennes consécutives, qui tient lieu de gradient. Sont retenues les 9 450
-journées sur 15 020 où le validé n'a pas d'écart de plus de six heures ; la
-limite de ce filtre est dite plus bas.
+existent tous deux, le brut portant tous les pas de quinze minutes sans point
+marqué douteux, et la journée étant certifiée validée par la carte `QIXnJ`
+(voir ci-dessus), les deux séries sont agrégées sur les mêmes pas et
+comparées : le pic de la moyenne, et le plus grand saut entre deux moyennes
+consécutives, qui tient lieu de gradient. Cela fait 14 525 journées sur 15 020.
 
-Rapport validé sur brut, journées à forte variation, où l'amplitude des
-moyennes dépasse 30 % du pic, rangées par nombre de points validés dans la
-journée :
+Rapport validé sur brut, sur les 8 478 journées à forte variation, où
+l'amplitude des moyennes dépasse 30 % du pic, rangées par nombre de points
+validés dans la journée :
 
 ```
 points valides    jours   pic median   gradient median   gradient p10   gradient < 0,5
 par jour
- 1 a 10             120        0,99             0,54            0,27            41 %
-11 a 25           1 422        1,00             0,77            0,47            14 %
-26 a 50           1 159        1,00             0,90            0,64             4 %
-51 a 100          1 365        1,00             0,96            0,80           0,3 %
-plus de 100       1 725        1,00             1,00            0,92           0,6 %
+ 0 a 10           1 256        1,00             0,67            0,23            32 %
+11 a 25           2 595        1,00             0,85            0,50            10 %
+26 a 50           1 504        1,00             0,94            0,67             3 %
+51 a 100          1 396        1,00             0,96            0,80           0,4 %
+plus de 100       1 727        1,00             1,00            0,92           0,6 %
 ```
 
 - **Le pic est gardé partout**, à 99 ou 100 % en médiane, quelle que soit la
   densité : l'élagage garde les sommets, ce que prévoit une tolérance relative
   au débit.
-- **Le gradient dépend de la densité du validé.** Au-delà de cinquante points
-  par jour, il est gardé à 96 % ou plus ; en dessous de dix, à la moitié. Par
-  station, de 100 % à Moûtiers, 125 points validés par jour, à 86 % à Tarascon,
-  27 par jour.
+- **Le gradient dépend de la densité du validé.** Au-delà de vingt-cinq points
+  par jour, il est gardé à 94 % ou plus ; à dix ou moins, aux deux tiers. Par
+  station, de 100 % à Moûtiers, 112 points validés par jour, à 86 % à Tarascon,
+  26 par jour. La densité du validé est donc un indicateur de ce qu'il garde
+  des fronts, lisible sans le brut.
 - **Ce rapport ne se lit pas tout à fait comme une perte.** Le brut n'est pas
   corrigé : une part de ses gradients est du bruit ou un artefact que la
   validation retire à raison. Les journées au rapport le plus faible le
   montrent : 6 140 m³/s en brut à Tarascon le 5 août 2021, contre 1 817 en
   validé ; 424 m³/s en brut sur l'Ain le 24 décembre 2017, contre 113. **Ces
   artefacts-là ne sont pas marqués douteux.**
-- **La limite du filtre.** Écarter les journées où le validé a un écart de plus
-  de six heures retire les trous, mais aussi les longs segments qu'un débit
-  stable justifie, et favorise donc les journées denses : l'Ain passe de 3 029
-  journées à 440. Séparer un trou d'un segment demande le code de continuité
-  `c`, qui reste à lire.
 
 ## Les limites du service
 
